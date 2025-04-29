@@ -1,0 +1,32 @@
+services:
+  janusgraph:
+    image: janusgraph/janusgraph:latest
+    container_name: janusgraph
+    volumes:
+      - ./janusgraph-config:/etc/opt/janusgraph
+    environment:
+      - JANUSGRAPH_PROPERTIES=/etc/opt/janusgraph/janusgraph-inmemory.properties
+    ports:
+      - "8182:8182"
+    networks:
+      - janusnet
+    tty: true
+    stdin_open: true
+
+  gremlin-server:
+    image: tinkerpop/gremlin-server:3.6.2
+    container_name: gremlin-server
+    ports:
+      - "8183:8182"
+    volumes:
+      - ./scripts:/opt/gremlin-server/conf/scripts:ro
+    environment:
+      - JAVA_OPTS=-Xms256m -Xmx512m -Dlog4j.configuration=conf/log4j-server.properties
+    networks:
+      - janusnet
+    tty: true
+    stdin_open: true
+
+networks:
+  janusnet:
+    external: true
