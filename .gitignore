@@ -1,0 +1,91 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Build directories
+dist/
+build/
+out/
+.next/
+.nuxt/
+.serverless/
+.turbo/
+
+# Cache directories
+.cache/
+.temp/
+.tmp/
+
+# Dependency directories
+jspm_packages/
+.webpack/
+
+# IDE and Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Logs
+logs/
+*.log
+
+# Package manager specific
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Debug files
+*.pid
+*.seed
+*.pid.lock
+
+# Optional
+.sass-cache/
+*.css.map
+*.js.map
+*.min.js
+
+# Project specific
+/.env
+/.env.*
+!.env.example
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Optional ESLint cache
+.eslintcache
+
+# Optional Babel cache
+babel.config.js
