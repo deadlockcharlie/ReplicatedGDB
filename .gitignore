@@ -89,3 +89,6 @@ Thumbs.db
 
 # Optional Babel cache
 babel.config.js
+
+
+janusgraph/
