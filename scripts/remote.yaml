@@ -1,5 +1,0 @@
-hosts: [janusgraph]
-port: 8182
-serializer: {classname: org.apache.tinkerpop.gremlin.driver.ser.GraphBinaryMessageSerializerV1, 
-config:{serializeResultToString: True}}
-
