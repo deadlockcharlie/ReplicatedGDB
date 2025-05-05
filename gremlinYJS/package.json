@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "express": "^5.1.0",
-    "gremlin": "^3.7.3"
-  }
-}
