@@ -11,7 +11,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log('Setting up connection to Gremlin server...');
     const traversal = gremlin.process.AnonymousTraversalSource.traversal;
-    const g = traversal().withRemote(new gremlin.driver.DriverRemoteConnection('ws://localhost:8183/gremlin'));
+    const g = traversal().withRemote(new gremlin.driver.DriverRemoteConnection('ws://localhost:8182/gremlin'));
 
     console.log('Connected to Gremlin server');
     g.addV('person')
