@@ -7,17 +7,24 @@ router.post("/", jsonParser, async (req, res) => {
     try {
       // console.log("Adding vertex with body:", req);
       const { identifier, label = 'vertex', properties = {} } = req.body;
-    console.log("Vertex ID:", identifier);
-      const traversal = g.addV(label).property('identifier', identifier);
-      for (const [key, value] of Object.entries(properties)) {
-        traversal.property(key, value);
-      }
-      const result = await traversal.next();
+      console.log(properties);
+
+      const query = `CREATE (${identifier}:${label} $properties)`;
+      const params = {
+        label:label,
+        identifier: identifier,
+        properties: properties,
+      };
+      const result = await executeCypherQuery(query, params);
+      // console.log("Result:", result);
+
+      // const traversal = g.addV(label).property('identifier', identifier);
+      // for (const [key, value] of Object.entries(properties)) {
+      //   traversal.property(key, value);
+      // }
+      // const result = await traversal.next();
       res.status(201).json({
-        message: "Vertex added successfully",
-        id: result.value.id,
-        label: result.value.label,
-        properties: result.value.properties,
+        message: "Vertex added successfully"
       });
     } catch (error) {
       console.error("Error adding vertex:", error);

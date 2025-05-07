@@ -6,10 +6,27 @@ var logger = require("morgan");
 var bodyParser = require("body-parser");
 var jsonParser = bodyParser.json();
 
-// Configure Gremlin client
-const gremlin = require("gremlin");
-var t = gremlin.process;
-var g = gremlin.process.AnonymousTraversalSource.traversal;
+var neo4j = require('neo4j-driver');
+// Neo4j Driver
+driver = neo4j.driver(
+  'bolt://localhost:7687',
+);
+session = driver.session();
+
+executeCypherQuery = async (statement, params = {}) => {
+  try {
+    const result = await session.run(statement, params);
+    return result;
+  } catch (error) {
+    throw error; // we are logging this error at the time of calling this method
+  }
+}
+
+
+// // Configure Gremlin client
+// const gremlin = require("gremlin");
+// var t = gremlin.process;
+// var g = gremlin.process.AnonymousTraversalSource.traversal;
 
 
 var indexRouter = require("./routes/index");
