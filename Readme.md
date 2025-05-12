@@ -20,6 +20,15 @@ This will start the application on the specified port. The default setup is loca
 
 To connect multiple clients, each running its own instance of the application and the database, start as many clients as you need with the command above. Ensure each client connects to its own instance of neo4j. Since clients replicate all updates to each other, two clients connecting to the same database will duplicate the data. 
 
+To setup the synchronization framework, a signaling server is required. It is provided by the Yjs library. The signaling server is a WebSocket server that allows clients to connect to each other and replicate data. 
+
+from the root of the project, 
+```
+PORT=4444 node ./node_modules/y-webrtc/bin/server.js
+```
+This will start the signaling server on port 4444.
+
+
 ### API
 
 `/api/addVertex` - Add a vertex to the graph.
