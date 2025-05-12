@@ -8,7 +8,7 @@ This project is a replication middleware for Cypher based graph databases. It ha
 - Uses YJs to replicate the graph data between clients. 
 
 ### Setup
-This project is a NodeJS application and exposes a REST API. To run the application, you need to have NodeJS, npm and Neo4j installed. Neo4j can be run in a docker container with relevant ports exposed. The port config should be set in the app.js file. 
+This project is a NodeJS application and exposes a REST API. To run the application, you need to have NodeJS@24, npm and Neo4j installed. Neo4j can be run in a docker container with relevant ports exposed. The port config should be set in the app.js file. 
 
 
 Once Neo4j is running, you can run the application with the following command:
