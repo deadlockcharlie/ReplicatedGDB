@@ -6,6 +6,26 @@ var logger = require("morgan");
 var bodyParser = require("body-parser");
 var jsonParser = bodyParser.json();
 
+var Y = require("yjs");
+const {WebrtcProvider} = require("y-webrtc");
+const wrtc = require("@roamhq/wrtc");
+
+ydoc = new Y.Doc();
+
+
+GVertices = ydoc.getMap("GVertices");
+vertexCount = 0;
+
+const wrtcprovider = new WebrtcProvider("graphdb", ydoc, {
+  signaling: ['ws://localhost:4444'],
+  peerOpts: {
+    wrtc: wrtc
+  }
+});
+
+ydoc.on("update", (update) => {
+  console.log("Yjs document updated:", update);
+});
 var neo4j = require('neo4j-driver');
 // Neo4j Driver
 driver = neo4j.driver(

@@ -5,15 +5,21 @@ var jsonParser = bodyParser.json();
 
 router.post('/', jsonParser, async (req, res) => {
     try {
-        const { label, fromId, toId, properties = {} } = req.body;
+        const { SourceLabel, SourcePropName, SourcePropValue, TargetLabel, TargetPropName, TargetPropValue, RelationType, properties = {} } = req.body;
         
         // const traversal = g.V().has('identifier',toId).as('target').V().has('identifier',fromId).addE(label)
         //     .to('target')
-        
-        const query = `MATCH (a), (b) WHERE id(a) = $idA AND id(b) = $idB CREATE (a)-[:RELATES_TO]->(b) RETURN a, b`;
+        console.log(properties);
+        const query = `MATCH (a:${SourceLabel} {${SourcePropName}: "${SourcePropValue}"}), (b:${TargetLabel} {${TargetPropName}: "${TargetPropValue}"}) CREATE (a)-[r:${RelationType} $properties]->(b) RETURN r`;
         const params = {
-            idA: fromId,
-            idB: toId
+            SourceLabel: SourceLabel,
+            SourcePropName: SourcePropName,
+            SourcePropValue: SourcePropValue,
+            TargetLabel: TargetLabel,
+            TargetPropName: TargetPropName,
+            TargetPropValue: TargetPropValue,
+            properties: properties,
+            RelationType: RelationType || 'RELATIONSHIP'
         };
         const result = await executeCypherQuery(query, params);
         console.log("Result:", result);

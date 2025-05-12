@@ -1,19 +1,21 @@
 {
-  "name": "replicatedjanus",
+  "name": "replicatedgdb",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@mapbox/node-pre-gyp": "^2.0.0",
+    "@roamhq/wrtc": "^0.8.0",
     "config": "^3.3.12",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
-    "express": "~4.16.1",
-    "gremlin": "^3.7.3",
+    "express": "^4.21.2",
     "http-errors": "~1.6.3",
-    "jade": "~1.11.0",
     "morgan": "~1.9.1",
-    "neo4j-driver": "^5.28.1"
+    "neo4j-driver": "^5.28.1",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.26"
   }
 }
