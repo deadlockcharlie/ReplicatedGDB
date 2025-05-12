@@ -14,7 +14,7 @@ This project is a NodeJS application and exposes a REST API. To run the applicat
 Once Neo4j is running, you can run the application with the following command:
 
 ```
-DEBUG=replicatedGDB:* PORT= <PORT NUMBER> npm start
+DEBUG=replicatedGDB:* PORT= <PORT NUMBER> BOLT_PORT= <NEO4J BOLT PORT> npm start
 ```
 This will start the application on the specified port. The default setup is local. 
 

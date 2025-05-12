@@ -27,9 +27,12 @@ ydoc.on("update", (update) => {
   console.log("Yjs document updated:", update);
 });
 var neo4j = require('neo4j-driver');
-// Neo4j Driver
+
+
+var boltPort = normalizePort(process.env.BOLT_PORT || "7687");
+console.log("Connecting to neo4j on Bolt port:", boltPort);
 driver = neo4j.driver(
-  'bolt://localhost:7687',
+  'bolt://localhost:' + boltPort,
 );
 session = driver.session();
 
@@ -88,5 +91,24 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render("error");
 });
+
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+
 
 module.exports = app;

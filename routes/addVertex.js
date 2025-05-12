@@ -18,6 +18,7 @@ router.post("/", jsonParser, async (req, res) => {
         properties: properties,
       };
       const result = await executeCypherQuery(query, params);
+      
       if (result.records.length === 0) {
         return res.status(500).json({
           message: "Failed to create vertex",
