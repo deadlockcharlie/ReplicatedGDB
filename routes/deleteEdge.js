@@ -10,7 +10,7 @@ router.post("/", jsonParser, async (req, res) => {
     try {
       // console.log("Adding vertex with body:", req);
       const { relationType, properties } = req.body;
-      console.log("Deleting edge with body:", relationType, JSON.stringify(properties, null, 2));
+      // console.log("Deleting edge with body:", relationType, JSON.stringify(properties, null, 2));
       await deleteEdge(false, relationType, properties);
       res.status(201).json({message: "Edge deleted successfully"});
     } catch (error) {

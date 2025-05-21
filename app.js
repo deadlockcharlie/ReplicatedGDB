@@ -30,12 +30,12 @@ const wrtcprovider = new WebrtcProvider("graphdb", ydoc, {
 GEdges.observe((yevent, transaction) =>{
   yevent.changes.keys.forEach((update,key)=> {
     if(update.action === "delete" && !transaction.local){
-      console.log("Key deleted: ", key);
-      console.log("Update: ", update.oldValue);
+      // console.log("Key deleted: ", key);
+      // console.log("Update: ", update.oldValue);
       var toDelete = update.oldValue;
 
       if(toDelete.hasOwnProperty("relationType")) {
-        console.log("Delete edge was called from a remote client", toDelete);
+        // console.log("Delete edge was called from a remote client", toDelete);
         (async () => {
           await deleteEdge(
             true,
@@ -56,8 +56,8 @@ GVertices.observe((yevent, transaction) => {
   
     if(update.action === "delete" && !transaction.local) {
       // console.log("Transaction was issued for a delete", transaction);
-      console.log("Key deleted: ", key);
-      console.log("Update: ", update.oldValue);
+      // console.log("Key deleted: ", key);
+      // console.log("Update: ", update.oldValue);
       var toDelete = update.oldValue;
 
       if(toDelete.hasOwnProperty("label")) {
@@ -102,21 +102,21 @@ ydoc.on("update", (update, origin, doc, transaction) => {
           })().catch((error) => {
             console.error("Error adding vertex due to remote update:", error);
           });
-        } else if (updateValue.content.arr[0].hasOwnProperty("SourceLabel")) {
-          console.log(
-            "Add edge was called from a remote client",
-            updateValue.content
-          );
+        } else if (updateValue.content.arr[0].hasOwnProperty("sourceLabel")) {
+          // console.log(
+          //   "Add edge was called from a remote client",
+          //   updateValue.content
+          // );
           (async () => {
             await addEdge(
               true,
-              updateValue.content.arr[0].SourceLabel,
-              updateValue.content.arr[0].SourcePropName,
-              updateValue.content.arr[0].SourcePropValue,
-              updateValue.content.arr[0].TargetLabel,
-              updateValue.content.arr[0].TargetPropName,
-              updateValue.content.arr[0].TargetPropValue,
-              updateValue.content.arr[0].RelationType,
+              updateValue.content.arr[0].sourceLabel,
+              updateValue.content.arr[0].sourcePropName,
+              updateValue.content.arr[0].sourcePropValue,
+              updateValue.content.arr[0].targetLabel,
+              updateValue.content.arr[0].targetPropName,
+              updateValue.content.arr[0].targetPropValue,
+              updateValue.content.arr[0].relationType,
               updateValue.content.arr[0].properties
             );
           })().catch((error) => {

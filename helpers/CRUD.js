@@ -64,9 +64,9 @@
         const result = await executeCypherQuery(query, params);
 
         if(!remote){
-          console.log("Removing the edge from the local data")
+          // console.log("Removing the edge from the local data")
           GEdges.delete(properties.identifier);
-          console.log(JSON.stringify(GEdges, null, 2));
+          // console.log(JSON.stringify(GEdges, null, 2));
         }
         return result;
       }
