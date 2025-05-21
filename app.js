@@ -5,57 +5,151 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var bodyParser = require("body-parser");
 var jsonParser = bodyParser.json();
+var { addVertex, deleteVertex, addEdge,deleteEdge } = require("./helpers/CRUD");
 
 var Y = require("yjs");
-const {WebrtcProvider} = require("y-webrtc");
+const { WebrtcProvider } = require("y-webrtc");
 const wrtc = require("@roamhq/wrtc");
+
+const { fromUint8Array, toUint8Array } = require("js-base64");
 
 ydoc = new Y.Doc();
 
-
 GVertices = ydoc.getMap("GVertices");
+GEdges = ydoc.getMap("GEdges");
 vertexCount = 0;
 
 const wrtcprovider = new WebrtcProvider("graphdb", ydoc, {
-  signaling: ['ws://localhost:4444'],
+  signaling: ["ws://localhost:4444"],
   peerOpts: {
-    wrtc: wrtc
+    wrtc: wrtc,
+  },
+});
+
+
+GEdges.observe((yevent, transaction) =>{
+  yevent.changes.keys.forEach((update,key)=> {
+    if(update.action === "delete" && !transaction.local){
+      console.log("Key deleted: ", key);
+      console.log("Update: ", update.oldValue);
+      var toDelete = update.oldValue;
+
+      if(toDelete.hasOwnProperty("relationType")) {
+        console.log("Delete edge was called from a remote client", toDelete);
+        (async () => {
+          await deleteEdge(
+            true,
+            toDelete.relationType,
+            toDelete.properties
+          );
+        })().catch((error) => {
+          console.error("Error deleting edge due to a remote update:", error);
+        });
+      }
+
+    }
+  });
+});
+
+GVertices.observe((yevent, transaction) => {
+  yevent.changes.keys.forEach((update, key) => {
+  
+    if(update.action === "delete" && !transaction.local) {
+      // console.log("Transaction was issued for a delete", transaction);
+      console.log("Key deleted: ", key);
+      console.log("Update: ", update.oldValue);
+      var toDelete = update.oldValue;
+
+      if(toDelete.hasOwnProperty("label")) {
+        (async () => {
+          await deleteVertex(
+            true,
+            toDelete.label,
+            toDelete.properties
+          );
+        })().catch((error) => {
+          console.error("Error deleting vertex due to remote update:", error);
+        });
+      }
+    }
+      
+  });
+  
+});
+
+ydoc.on("update", (update, origin, doc, transaction) => {
+  // console.log("Yjs document updated:", update);
+  var updateString = Y.decodeUpdate(update);
+  // console.log("Doc updated: ", doc);
+
+  if (transaction.local) {
+    return;
+  } else {
+    // console.log("Yjs document updated ", JSON.stringify(updateString, null, 2));
+    for (const updateValue of updateString.structs) {
+      // console.log("Vertices: ", GVertices.toJSON());
+      // console.log("Update value: ", JSON.stringify(updateValue, null, 2));
+      if (updateValue.content.hasOwnProperty("arr")) {
+        if (updateValue.content.arr[0].hasOwnProperty("label")) {
+          (async () => {
+            await addVertex(
+              true,
+              updateValue.content.arr[0].label,
+              updateValue.content.arr[0].properties
+            );
+            // Y.applyUpdate(ydoc, update);
+            // console.log("Done adding vertex");
+          })().catch((error) => {
+            console.error("Error adding vertex due to remote update:", error);
+          });
+        } else if (updateValue.content.arr[0].hasOwnProperty("SourceLabel")) {
+          console.log(
+            "Add edge was called from a remote client",
+            updateValue.content
+          );
+          (async () => {
+            await addEdge(
+              true,
+              updateValue.content.arr[0].SourceLabel,
+              updateValue.content.arr[0].SourcePropName,
+              updateValue.content.arr[0].SourcePropValue,
+              updateValue.content.arr[0].TargetLabel,
+              updateValue.content.arr[0].TargetPropName,
+              updateValue.content.arr[0].TargetPropValue,
+              updateValue.content.arr[0].RelationType,
+              updateValue.content.arr[0].properties
+            );
+          })().catch((error) => {
+            console.error("Error adding edge due to a remote update:", error);
+          });
+        }
+      }
+    }
   }
 });
 
-ydoc.on("update", (update) => {
-  console.log("Yjs document updated:", update);
-});
-var neo4j = require('neo4j-driver');
-
+var neo4j = require("neo4j-driver");
 
 var boltPort = normalizePort(process.env.BOLT_PORT || "7687");
 console.log("Connecting to neo4j on Bolt port:", boltPort);
-driver = neo4j.driver(
-  'bolt://localhost:' + boltPort,
-);
-session = driver.session();
+driver = neo4j.driver("bolt://localhost:" + boltPort);
 
 executeCypherQuery = async (statement, params = {}) => {
+  session = driver.session();
   try {
     const result = await session.run(statement, params);
     return result;
   } catch (error) {
     throw error; // we are logging this error at the time of calling this method
   }
-}
-
-
-// // Configure Gremlin client
-// const gremlin = require("gremlin");
-// var t = gremlin.process;
-// var g = gremlin.process.AnonymousTraversalSource.traversal;
-
+};
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var addVertexRouter = require("./routes/addVertex");
+var deleteVertexRouter = require("./routes/deleteVertex");
 var addEdgeRouter = require("./routes/addEdge");
+var deleteEdgeRouter = require("./routes/deleteEdge");
 var getGraphRouter = require("./routes/getGraph");
 
 var app = express();
@@ -75,6 +169,8 @@ app.use("/users", usersRouter);
 app.use("/api/getGraph", getGraphRouter);
 app.use("/api/addVertex", addVertexRouter);
 app.use("/api/addEdge", addEdgeRouter);
+app.use("/api/deleteVertex", deleteVertexRouter);
+app.use("/api/deleteEdge", deleteEdgeRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -92,7 +188,6 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-
 function normalizePort(val) {
   var port = parseInt(val, 10);
 
@@ -109,6 +204,5 @@ function normalizePort(val) {
   return false;
 }
 
-
-
 module.exports = app;
+module.exports.executeCypherQuery = executeCypherQuery;

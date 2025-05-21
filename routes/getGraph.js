@@ -6,10 +6,10 @@ var router = express.Router();
 router.get('/', async function(req, res, next) {
     try {
         const {limit = 100} = req.body;
-        const query = `MATCH (n)-[r]->(m) RETURN n, r, m LIMIT ${limit}`; 
+        const query = `MATCH (n)
+                      OPTIONAL MATCH (n)-[r]-(m)
+                      RETURN COLLECT(DISTINCT n) AS nodes, COLLECT(DISTINCT r) AS relationships LIMIT ${limit}`; 
         const result = await executeCypherQuery(query);
-  
-    
         res.json(result.records);
       } catch (error) {
         res.status(500).json({
