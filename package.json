@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@mapbox/node-pre-gyp": "^2.0.0",
-    "@roamhq/wrtc": "^0.8.0",
+    "@y/websocket-server": "^0.1.1",
     "config": "^3.3.12",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
@@ -16,7 +16,7 @@
     "js-base64": "^3.7.7",
     "morgan": "~1.9.1",
     "neo4j-driver": "^5.28.1",
-    "y-webrtc": "^10.3.0",
+    "y-websocket": "^3.0.0",
     "yjs": "^13.6.26"
   }
 }

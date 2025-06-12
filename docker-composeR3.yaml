@@ -1,0 +1,32 @@
+
+
+services:
+  neo4j3:
+    image: neo4j:latest
+    container_name: neo4j3
+    ports:
+      - "7476:7474"   # HTTP
+      - "7689:7687"   # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/verysecretpassword
+    healthcheck:
+      test: cypher-shell -u neo4j -p verysecretpassword "SHOW DATABASES"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app3:
+    build: 
+      context: .
+      dockerfile: GRACEDockerfile
+    container_name: GRACE3
+    ports:
+      - "3002:3000"
+    environment:
+      WS_URI: "ws://wsserver:1234"
+      NEO4J_URI: "bolt://neo4j3:7689"
+      NEO4J_USER: "neo4j"
+      NEO4J_PASSWORD: "verysecretpassword"
+    depends_on:
+      neo4j3:
+        condition: service_healthy

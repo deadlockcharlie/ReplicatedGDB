@@ -5,7 +5,6 @@ const { deleteVertex } = require('../helpers/CRUD');
 var jsonParser = bodyParser.json();
 
 
-
 router.post("/", jsonParser, async (req, res) => {
     try {
       // console.log("Adding vertex with body:", req);

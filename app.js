@@ -8,8 +8,7 @@ var jsonParser = bodyParser.json();
 var { addVertex, deleteVertex, addEdge,deleteEdge } = require("./helpers/CRUD");
 
 var Y = require("yjs");
-const { WebrtcProvider } = require("y-webrtc");
-const wrtc = require("@roamhq/wrtc");
+var {WebsocketProvider} = require("y-websocket");
 
 const { fromUint8Array, toUint8Array } = require("js-base64");
 
@@ -19,12 +18,14 @@ GVertices = ydoc.getMap("GVertices");
 GEdges = ydoc.getMap("GEdges");
 vertexCount = 0;
 
-const wrtcprovider = new WebrtcProvider("graphdb", ydoc, {
-  signaling: ["ws://localhost:4444"],
-  peerOpts: {
-    wrtc: wrtc,
-  },
-});
+const wsProvider = new WebsocketProvider(process.env.WS_URI, 'GraceSyncKey', ydoc, { WebSocketPolyfill: require('ws') });
+
+// const wrtcprovider = new WebrtcProvider("graphdb", ydoc, {
+//   signaling: ["ws://localhost:4444"],
+//   peerOpts: {
+//     wrtc: wrtc,
+//   },
+// });
 
 
 GEdges.observe((yevent, transaction) =>{
@@ -130,9 +131,9 @@ ydoc.on("update", (update, origin, doc, transaction) => {
 
 var neo4j = require("neo4j-driver");
 
-var boltPort = normalizePort(process.env.BOLT_PORT || "7687");
-console.log("Connecting to neo4j on Bolt port:", boltPort);
-driver = neo4j.driver("bolt://localhost:" + boltPort);
+
+console.log("Connecting to neo4j on Bolt port:", process.env.NEO4J_URI);
+driver = neo4j.driver(process.env.NEO4J_URI, neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD));
 
 executeCypherQuery = async (statement, params = {}) => {
   session = driver.session();
