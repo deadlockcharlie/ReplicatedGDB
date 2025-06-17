@@ -33,7 +33,7 @@
       else if (GVertices.get(properties.identifier) == undefined && !remote) {
         throw new Error("Vertex with this identifier does not exist");
       } else {
-        const query = `MATCH (n:${label} {identifier: $properties.identifier}) DELETE n`;
+        const query = `MATCH (n:${label} {identifier: $properties.identifier}) DETACH DELETE n`;
         const params = {
           label:label,
           properties: properties,

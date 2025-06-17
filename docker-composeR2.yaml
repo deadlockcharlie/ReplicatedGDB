@@ -1,5 +1,3 @@
-
-
 services:
   neo4j2:
     image: neo4j:latest
