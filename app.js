@@ -14,8 +14,18 @@ const { fromUint8Array, toUint8Array } = require("js-base64");
 
 ydoc = new Y.Doc();
 
+import { AdjacencyList } from "./AdjList";
+
+
 GVertices = ydoc.getMap("GVertices");
 GEdges = ydoc.getMap("GEdges");
+//const adjList = new AdjacencyList(ydoc, {
+//  addVertex,
+//  deleteVertex,
+//  addEdge,
+//  deleteEdge
+//});
+
 vertexCount = 0;
 
 const wsProvider = new WebsocketProvider(process.env.WS_URI, 'GraceSyncKey', ydoc, { WebSocketPolyfill: require('ws') });
@@ -28,6 +38,8 @@ const wsProvider = new WebsocketProvider(process.env.WS_URI, 'GraceSyncKey', ydo
 // });
 
 
+
+//adjList['GVertices'].observeDeep((yevent, transaction) =>{ // GEdges
 GEdges.observe((yevent, transaction) =>{
   yevent.changes.keys.forEach((update,key)=> {
     if(update.action === "delete" && !transaction.local){
@@ -52,6 +64,7 @@ GEdges.observe((yevent, transaction) =>{
   });
 });
 
+//adjList['GVertices'].observe((yevent, transaction) => {
 GVertices.observe((yevent, transaction) => {
   yevent.changes.keys.forEach((update, key) => {
   
@@ -77,6 +90,10 @@ GVertices.observe((yevent, transaction) => {
   });
   
 });
+
+//adjList.observe(() => {
+//  
+//});
 
 ydoc.on("update", (update, origin, doc, transaction) => {
   // console.log("Yjs document updated:", update);
@@ -128,6 +145,14 @@ ydoc.on("update", (update, origin, doc, transaction) => {
     }
   }
 });
+
+//adjList.observe(() => {
+//  // React to any remote or local change in graph
+//  console.log("Graph updated");
+//
+//  // If you want to re-sync to a DB, UI, etc. do it here
+//});
+
 
 var neo4j = require("neo4j-driver");
 

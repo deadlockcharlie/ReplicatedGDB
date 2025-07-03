@@ -33,4 +33,3 @@ services:
       neo4j1:
         condition: service_healthy
 
-
