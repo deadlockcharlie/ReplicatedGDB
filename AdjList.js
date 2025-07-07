@@ -3,6 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdjacencyList = void 0;
 var Y = require("yjs");
 var CRUD_1 = require("./helpers/CRUD");
+//export type VertexInformation = {
+//  id: string,
+//  properties : { [key: string]: any },
+//  edgesConnected : Y.Map<EdgeInformation>
+//}
 var AdjacencyList = /** @class */ (function () {
     function AdjacencyList(ydoc, helpers) {
         if (helpers === void 0) { helpers = {
@@ -15,17 +20,17 @@ var AdjacencyList = /** @class */ (function () {
         this.helpers = helpers;
         this.GVertices = ydoc.getMap('GVertices');
     }
-    AdjacencyList.prototype.addNode = function (id, label, properties, remote) {
+    AdjacencyList.prototype.addVertex = function (id, label, properties, remote) {
         if (remote === void 0) { remote = false; }
         this.helpers.addVertex(remote, label, properties);
-        var node = new Y.Map();
-        node.set('id', id);
-        node.set('label', label);
-        node.set('properties', properties);
-        node.set('edgeInformation', new Y.Array());
-        this.GVertices.set(id, node);
+        var vertex = new Y.Map();
+        vertex.set('id', id);
+        vertex.set('properties', properties);
+        vertex.set('edgesConnected', new Y.Map()); // This will hold EdgeInformation
+        // Store vertex in the GVertices map using its ID
+        this.GVertices.set(id, vertex);
     };
-    AdjacencyList.prototype.removeNode = function (id, label, properties, remote) {
+    AdjacencyList.prototype.removeVertex = function (id, label, properties, remote) {
         if (remote === void 0) { remote = false; }
         this.helpers.deleteVertex(remote, label, properties);
         this.GVertices.delete(id);

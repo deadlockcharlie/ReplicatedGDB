@@ -17,14 +17,14 @@ ydoc = new Y.Doc();
 import { AdjacencyList } from "./AdjList";
 
 
-GVertices = ydoc.getMap("GVertices");
-GEdges = ydoc.getMap("GEdges");
-//const adjList = new AdjacencyList(ydoc, {
-//  addVertex,
-//  deleteVertex,
-//  addEdge,
-//  deleteEdge
-//});
+//GVertices = ydoc.getMap("GVertices");
+//GEdges = ydoc.getMap("GEdges");
+const adjList = new AdjacencyList(ydoc, {
+  addVertex,
+  deleteVertex,
+  addEdge,
+  deleteEdge
+});
 
 vertexCount = 0;
 
