@@ -3,22 +3,24 @@
 import * as Y from 'yjs';
 const { executeCypherQuery } = require('./app');
 import { v4 as uuidv4 } from 'uuid';
+import { BackupProgressInfo } from 'node:sqlite';
 
 export type EdgeInformation = {
-  id: string;
-  relationType: string;
-  sourceLabel: string;
-  sourcePropName: string;
-  sourcePropValue: any;
-  targetLabel: string;
-  targetPropName: string;
-  targetPropValue: any;
-  properties: { [key: string]: any };
+  id: string,
+  relationType: string,
+  sourceLabel: string,
+  sourcePropName: string,
+  sourcePropValue: any,
+  targetLabel: string,
+  targetPropName: string,
+  targetPropValue: any,
+  properties: { [key: string]: any }
 };
 
 export type VertexInformation = {
   id: string,
-  properties : { [key: string]: any },
+  label: string,
+  properties: { [key: string]: any }
 }
 
 export type Links = {
@@ -62,9 +64,10 @@ export class Graph {
 
       if (!remote) {
         //adding it to Vertices list
-        var vertex : VertexInformation = {
-          'id' : label,
-          'properties' : properties
+        var vertex: VertexInformation = {
+          'id': properties.identifier,
+          'label': label,
+          'properties': properties
         };
         this.GVertices.set(label, vertex);
       }
@@ -97,56 +100,58 @@ export class Graph {
   }
 
   public async addEdge(
-    sourceId: string,
-    targetId: string,
-    edge: Omit<EdgeInformation, 'id'>,
-    remote: boolean,
-    properties: Record<string, any>
+    //edge: Omit<EdgeInformation, 'id'>,
+    relationType: string,
+    sourceLabel: string,
+    sourcePropName: string,
+    sourcePropValue: any,
+    targetLabel: string,
+    targetPropName: string,
+    targetPropValue: any,
+    properties: { [key: string]: any },
+    remote: boolean
+
   ) {
     console.log(properties);
 
     if (properties.identifier == undefined) {
       throw new Error("Identifier is required");
     }
+    const edgeId = properties.identifier;
 
-    const sourceNode = this.GVertices.get(sourceId);
-    if (!sourceNode) throw new Error('Source node not found'); // also add for the targetNode
-
-    //First getting the edgeID we are going to give it, then getting the list of edges of the source node then checking if the edgeId shows up
-    const edgeId = properties.identifier; //needs to be changed for the uniqueness of the edges in multiple edges between vertices
-    const edgeList = sourceNode.get('edgeInformation') as Y.Array<Y.Map<any>>;
-    const edgeExists = edgeList.toArray().some((edgeMap) => edgeMap.get('id') === edgeId);
-
-    if (!edgeExists || remote === true) {
-      const query = `MATCH (a:${edge.sourceLabel} {${edge.sourcePropName}: "${edge.sourcePropValue}"}), (b:${edge.targetLabel} {${edge.targetPropName}: "${edge.targetPropValue}"}) CREATE (a)-[r:${edge.relationType} $properties]->(b) RETURN r`;
+    if (this.GEdges.get(properties.identifier) == undefined || remote === true) {
+      const query = `MATCH (a:${sourceLabel} {${sourcePropName}: "${sourcePropValue}"}), (b:${targetLabel} {${targetPropName}: "${targetPropValue}"}) CREATE (a)-[r:${relationType} $properties]->(b) RETURN r`;
       const params = {
-        sourceLabel: edge.sourceLabel,
-        sourcePropName: edge.sourcePropName,
-        sourcePropValue: edge.sourcePropValue,
-        targetLabel: edge.targetLabel,
-        targetPropName: edge.targetPropName,
-        targetPropValue: edge.targetPropValue,
-        properties: edge.properties,
-        relationType: edge.relationType
+        sourceLabel: sourceLabel,
+        sourcePropName: sourcePropName,
+        sourcePropValue: sourcePropValue,
+        targetLabel: targetLabel,
+        targetPropName: targetPropName,
+        targetPropValue: targetPropValue,
+        properties: properties,
+        relationType: relationType
       };
       const result = await executeCypherQuery(query, params);
+
 
       if (result.records.length === 0) {
         throw new Error(JSON.stringify(result));
       }
       if (!remote) {
-        const edgeMap = new Y.Map<any>();
-        edgeMap.set('id', edgeId);
-        edgeMap.set('relationType', edge.relationType);
-        edgeMap.set('sourceLabel', edge.sourceLabel);
-        edgeMap.set('sourcePropName', edge.sourcePropName);
-        edgeMap.set('sourcePropValue', edge.sourcePropValue);
-        edgeMap.set('targetLabel', edge.targetLabel);
-        edgeMap.set('targetPropName', edge.targetPropName);
-        edgeMap.set('targetPropValue', edge.targetPropValue);
-        edgeMap.set('properties', edge.properties);
 
-        edgeList.push([edgeMap]);
+        var edge: EdgeInformation = {
+          'id' : properties.identifier,
+          'sourceLabel': sourceLabel,
+          'sourcePropName': sourcePropName,
+          'sourcePropValue': sourcePropValue,
+          'targetLabel': targetLabel,
+          'targetPropName': targetPropName,
+          'targetPropValue': targetPropValue,
+          'properties': properties,
+          'relationType': relationType
+        }
+
+        this.GEdges.set(properties.identifier, edge)
 
       }
     }
