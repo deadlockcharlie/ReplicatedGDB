@@ -19,16 +19,24 @@ export type EdgeInformation = {
 export type VertexInformation = {
   id: string,
   properties : { [key: string]: any },
-  edgesConnected : Y.Map<EdgeInformation>
+}
+
+export type Links = {
+  id_vertex: string,
+  edge_List: Y.Array<EdgeInformation>;
 }
 
 export class Graph {
   private ydoc: Y.Doc;
-  private GVertices: Y.Map<Y.Map<any>>;
+  private GVertices: Y.Map<VertexInformation>;
+  private GEdges: Y.Map<EdgeInformation>;
+  private Graph: Y.Map<Links>;
 
   constructor(ydoc: Y.Doc) {
     this.ydoc = ydoc;
     this.GVertices = ydoc.getMap('GVertices');
+    this.GEdges = ydoc.getMap('GEdges');
+    this.Graph = ydoc.getMap('Graph');
   }
 
   public async addVertex(label: string, properties: { [key: string]: any }, remote: boolean) {
@@ -53,22 +61,13 @@ export class Graph {
       }
 
       if (!remote) {
-        //adding it to the adjList
-        const vertex = new Y.Map<any>();
-        vertex.set('id', properties.Identifier);
-        const params: { [key: string]: any } = {
-          properties,
-          label
-        }
-        vertex.set('params', params);
-        vertex.set('edgesConnected', new Y.Array<Y.Map<EdgeInformation>>); // This will hold EdgeInformation
-
-        //
-
-        // Store vertex in the GVertices map using its ID
-        this.GVertices.set(properties.Identifier, vertex);;
+        //adding it to Vertices list
+        var vertex : VertexInformation = {
+          'id' : label,
+          'properties' : properties
+        };
+        this.GVertices.set(label, vertex);
       }
-      return result;
     } else {
       // If the vertex already exists, return an error
       throw new Error("Vertex with this identifier already exists");
