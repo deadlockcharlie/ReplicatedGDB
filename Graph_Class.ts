@@ -1,11 +1,8 @@
+//Adding unique identifier generator - UUID, append serverid, or smth else
+
 import * as Y from 'yjs';
 const { executeCypherQuery } = require('./app');
-import {
-  addVertex,
-  deleteVertex,
-  addEdge,
-  deleteEdge
-} from './helpers/CRUD';
+import { v4 as uuidv4 } from 'uuid';
 
 export type EdgeInformation = {
   id: string;
@@ -19,39 +16,22 @@ export type EdgeInformation = {
   properties: { [key: string]: any };
 };
 
-//export type VertexInformation = {
-//  id: string,
-//  properties : { [key: string]: any },
-//  edgesConnected : Y.Map<EdgeInformation>
-//}
+export type VertexInformation = {
+  id: string,
+  properties : { [key: string]: any },
+  edgesConnected : Y.Map<EdgeInformation>
+}
 
-export class AdjacencyList {
+export class Graph {
   private ydoc: Y.Doc;
   private GVertices: Y.Map<Y.Map<any>>;
-  private helpers: {
-    addVertex: Function;
-    deleteVertex: Function;
-    addEdge: Function;
-    deleteEdge: Function;
-  };
 
-  //I am not sure whether we need the seperate CRUD operation if we are implemeting it all in one class.
-  constructor(
-    ydoc: Y.Doc,
-    //helpers = {
-    //  addVertex,
-    //  deleteVertex,
-    //  addEdge,
-    //  deleteEdge
-    //}
-  ) {
+  constructor(ydoc: Y.Doc) {
     this.ydoc = ydoc;
-    //this.helpers = helpers;
     this.GVertices = ydoc.getMap('GVertices');
   }
 
   public async addVertex(label: string, properties: { [key: string]: any }, remote: boolean) {
-    //this.helpers.addVertex(remote, label, properties);
 
     console.log("Adding vertex with label:", label);
 
@@ -81,7 +61,9 @@ export class AdjacencyList {
           label
         }
         vertex.set('params', params);
-        vertex.set('edgesConnected', new Y.Map()); // This will hold EdgeInformation
+        vertex.set('edgesConnected', new Y.Array<Y.Map<EdgeInformation>>); // This will hold EdgeInformation
+
+        //
 
         // Store vertex in the GVertices map using its ID
         this.GVertices.set(properties.Identifier, vertex);;
@@ -129,10 +111,10 @@ export class AdjacencyList {
     }
 
     const sourceNode = this.GVertices.get(sourceId);
-    if (!sourceNode) throw new Error('Source node not found');
+    if (!sourceNode) throw new Error('Source node not found'); // also add for the targetNode
 
     //First getting the edgeID we are going to give it, then getting the list of edges of the source node then checking if the edgeId shows up
-    const edgeId = `${sourceId}->${targetId}`;
+    const edgeId = properties.identifier; //needs to be changed for the uniqueness of the edges in multiple edges between vertices
     const edgeList = sourceNode.get('edgeInformation') as Y.Array<Y.Map<any>>;
     const edgeExists = edgeList.toArray().some((edgeMap) => edgeMap.get('id') === edgeId);
 
@@ -196,7 +178,6 @@ export class AdjacencyList {
         const index = edgeList.toArray().findIndex((e) => e.get('id') === edgeId);
 
         if (index !== -1) {
-          this.helpers.deleteEdge(remote, relationType, properties);
           edgeList.delete(index, 1);
         }
       }
@@ -208,7 +189,7 @@ export class AdjacencyList {
     this.GVertices.observeDeep(callback);
   }
 
-  public getNodeById(id: string): Y.Map<any> | undefined {
+  public getVertex(id: string): Y.Map<any> | undefined {
     return this.GVertices.get(id);
   }
 

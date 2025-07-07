@@ -19,12 +19,13 @@ import { AdjacencyList } from "./AdjList";
 
 //GVertices = ydoc.getMap("GVertices");
 //GEdges = ydoc.getMap("GEdges");
-const adjList = new AdjacencyList(ydoc, {
-  addVertex,
-  deleteVertex,
-  addEdge,
-  deleteEdge
-});
+const adjList = new AdjacencyList(ydoc);
+//(ydoc, {
+//  addVertex,
+//  deleteVertex,
+//  addEdge,
+//  deleteEdge
+//});
 
 vertexCount = 0;
 
@@ -38,8 +39,6 @@ const wsProvider = new WebsocketProvider(process.env.WS_URI, 'GraceSyncKey', ydo
 // });
 
 
-
-//adjList['GVertices'].observeDeep((yevent, transaction) =>{ // GEdges
 GEdges.observe((yevent, transaction) =>{
   yevent.changes.keys.forEach((update,key)=> {
     if(update.action === "delete" && !transaction.local){
@@ -64,7 +63,7 @@ GEdges.observe((yevent, transaction) =>{
   });
 });
 
-//adjList['GVertices'].observe((yevent, transaction) => {
+
 GVertices.observe((yevent, transaction) => {
   yevent.changes.keys.forEach((update, key) => {
   
