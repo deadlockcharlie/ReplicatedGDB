@@ -10,7 +10,7 @@ var { addVertex, deleteVertex, addEdge,deleteEdge } = require("./helpers/CRUD");
 
 var Y = require("yjs");
 var {WebsocketProvider} = require("y-websocket");
-const { Graph } = require('./Graph_Class');
+const { Graph } = require('./helpers/Graph_Class');
 
 const { fromUint8Array, toUint8Array } = require("js-base64");
 
@@ -82,10 +82,10 @@ app.post('/api/addVertex', async (req, res) => {
 });
 
 //app.use("/api/deleteVertex", deleteVertexRouter);
-app.delete('/api/deleteVertex', async (req, res) => {
+app.post('/api/deleteVertex', async (req, res) => {
   try {
-    const label = req.query.label; // you can pass label via query
-    const properties = { identifier: req.params.id };
+    const label = req.body.label; // you can pass label via query
+    const properties = req.body.properties;
     const result = await graph.removeVertex(label, properties, false);
     res.json(result);
   } catch (err) {
@@ -97,7 +97,6 @@ app.delete('/api/deleteVertex', async (req, res) => {
 app.post('/api/addEdge', async (req, res) => {
   try {
     const {
-      source_id,
       relationType,
       sourceLabel,
       sourcePropName,
@@ -109,7 +108,6 @@ app.post('/api/addEdge', async (req, res) => {
     } = req.body;
 
     const result = await graph.addEdge(
-      source_id,
       relationType,
       sourceLabel,
       sourcePropName,
@@ -127,15 +125,12 @@ app.post('/api/addEdge', async (req, res) => {
 });
 
 //app.use("/api/deleteEdge", deleteEdgeRouter);
-app.delete('/api/deleteEdge', async (req, res) => {
+app.post('/api/deleteEdge', async (req, res) => {
   try {
-    const sourceId     = req.query.sourceId;
-    const relationType = req.query.relationType;
-    const properties   = { identifier: req.params.id };
+    const relationType = req.body.relationType;
+    const properties   = req.body.properties;
 
     const result = await graph.removeEdge(
-      sourceId,
-      req.params.id,
       relationType,
       properties,
       false
@@ -146,21 +141,29 @@ app.delete('/api/deleteEdge', async (req, res) => {
   }
 });
 
+app.use((err, req, res, next) => {
+  console.error("❌ Error:", err.message); // You control this output
+  res.status(500).json({
+    success: false,
+    error: err.message, // Send only the message
+  });
+});
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
-});
+//app.use(function (err, req, res, next) {
+//  // set locals, only providing error in development
+//  res.locals.message = err.message;
+//  res.locals.error = req.app.get("env") === "development" ? err : {};
+//
+//  // render the error page
+//  res.status(err.status || 500);
+//  res.render("error");
+//});
 
 function normalizePort(val) {
   var port = parseInt(val, 10);

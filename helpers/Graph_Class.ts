@@ -6,7 +6,6 @@ import { BackupProgressInfo } from 'node:sqlite';
 
 export type EdgeInformation = {
   id: string,
-  source_id: string,
   relationType: string,
   sourceLabel: string,
   sourcePropName: string,
@@ -49,14 +48,18 @@ export class Graph {
     remote: boolean
   ) {
     console.log("Adding vertex with label:", label);
+    console.log("Remote:", remote);
 
     // Ensure identifier exists or generate one if not remote
-    if (!properties.identifier) {
-      if (!remote) {
-        properties.identifier = `${label}_${uuidv4()}`; // default fallback
-      } else {
-        throw new Error("Identifier is required for remote vertex");
-      }
+    //if (!properties.identifier) {
+    //  if (!remote) {
+    //    properties.identifier = `${label}_${uuidv4()}`; // default fallback
+    //  } else {
+    //    throw new Error("Identifier is required for remote vertex");
+    //  }
+    //}
+    if(properties.identifier == undefined){
+       throw new Error("Identifier is required");
     }
 
     const existingVertex = this.GVertices.get(properties.identifier);
@@ -79,6 +82,7 @@ export class Graph {
 
     // Only update local structures if not a remote sync
     if (!remote) {
+      console.log('CALLED!')
       const vertex: VertexInformation = {
         id: properties.identifier,
         label,
@@ -92,6 +96,9 @@ export class Graph {
 
       this.GVertices.set(properties.identifier, vertex);
       this.Graph.set(properties.identifier, newLink);
+      Array.from(this.GVertices.entries()).forEach(([key, value]) => {
+        console.log(key, value);
+      });
     }
 
     return result;
@@ -102,6 +109,7 @@ export class Graph {
     properties: Record<string, any>,
     remote: boolean
   ) {
+    console.log(properties);
     const identifier = properties.identifier;
 
     if (!identifier) {
@@ -120,7 +128,8 @@ export class Graph {
     const result = await this.executeCypherQuery(query, params);
 
     if (!remote) {
-      // Remove vertex and associated link data
+
+      // vertex and associated link data
       this.GVertices.delete(identifier);
       this.Graph.delete(identifier);
     }
@@ -128,7 +137,6 @@ export class Graph {
   }
 
   public async addEdge(
-    source_id: string,
     relationType: string,
     sourceLabel: string,
     sourcePropName: string,
@@ -140,15 +148,12 @@ export class Graph {
     remote: boolean
   ) {
 
-    if (this.GVertices.get(source_id) == undefined) {
-      Array.from(this.GVertices.entries()).forEach(([key, value]) => {
-        console.log(key, value);
-      });
-
-
+    console.log(properties, sourcePropValue);
+    if (this.GVertices.get(sourcePropValue) == undefined) {
+      console.log('called for some fucking reason')
       throw new Error("Source vertex undefined");
     }
-    console.log(properties);
+
 
     //check for id
     if (!properties.identifier) {
@@ -194,7 +199,6 @@ export class Graph {
     //adding it the yjs list
     const edge: EdgeInformation = {
       id: edgeId,
-      source_id,
       sourceLabel,
       sourcePropName,
       sourcePropValue,
@@ -207,13 +211,13 @@ export class Graph {
 
     if (!remote) {
       this.GEdges.set(edgeId, edge);
-      this.Graph.get(source_id)?.edge_List.push([edge]);
+      this.Graph.get(sourcePropValue)?.edge_List.push([edge]);
     }
 
     return result;
   }
 
-  public async removeEdge(sourceId: string, edgeId: string, relationType: string, properties: any, remote: boolean) {
+  public async removeEdge(relationType: string, properties: any, remote: boolean) {
     // Ensure the a unique identifier is provided
     if (!properties.identifier || !relationType) {
       throw new Error("Identifier and relation type is required to delete an edge");
@@ -229,12 +233,13 @@ export class Graph {
       const result = await this.executeCypherQuery(query, params);
       if (!remote) {
         // console.log("Removing the edge from the local data")
-        this.GEdges.delete(properties.identifier);
-        const edgeList = this.Graph.get(sourceId)?.edge_List;
-        const index = edgeList?.toArray().findIndex(e => e.id === edgeId);
+        const edge = this.GEdges.get(properties.identifier);
+        const edgeList = this.Graph.get(edge?.sourcePropValue)?.edge_List;
+        const index = edgeList?.toArray().findIndex(e => e.id === properties.identifier);
         if (index !== undefined && index >= 0) {
           edgeList?.delete(index);
         }
+        this.GEdges.delete(properties.identifier);
 
         // console.log(JSON.stringify(GEdges, null, 2));
       }

@@ -39,7 +39,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Graph = void 0;
 var Y = require("yjs");
-var uuid_1 = require("uuid");
 var Graph = /** @class */ (function () {
     function Graph(ydoc, executeCypherQuery) {
         this.ydoc = ydoc;
@@ -55,14 +54,17 @@ var Graph = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         console.log("Adding vertex with label:", label);
+                        console.log("Remote:", remote);
                         // Ensure identifier exists or generate one if not remote
-                        if (!properties.identifier) {
-                            if (!remote) {
-                                properties.identifier = "".concat(label, "_").concat((0, uuid_1.v4)()); // default fallback
-                            }
-                            else {
-                                throw new Error("Identifier is required for remote vertex");
-                            }
+                        //if (!properties.identifier) {
+                        //  if (!remote) {
+                        //    properties.identifier = `${label}_${uuidv4()}`; // default fallback
+                        //  } else {
+                        //    throw new Error("Identifier is required for remote vertex");
+                        //  }
+                        //}
+                        if (properties.identifier == undefined) {
+                            throw new Error("Identifier is required");
                         }
                         existingVertex = this.GVertices.get(properties.identifier);
                         // Prevent duplicate entries if not remote
@@ -70,7 +72,7 @@ var Graph = /** @class */ (function () {
                             throw new Error("Vertex with identifier \"".concat(properties.identifier, "\" already exists"));
                         }
                         query = "CREATE (n:".concat(label, " $properties) RETURN n");
-                        params = { label: label, properties: properties };
+                        params = { label: label, properties: properties, };
                         return [4 /*yield*/, this.executeCypherQuery(query, params)];
                     case 1:
                         result = _a.sent();
@@ -79,6 +81,7 @@ var Graph = /** @class */ (function () {
                         }
                         // Only update local structures if not a remote sync
                         if (!remote) {
+                            console.log('CALLED!');
                             vertex = {
                                 id: properties.identifier,
                                 label: label,
@@ -90,6 +93,10 @@ var Graph = /** @class */ (function () {
                             };
                             this.GVertices.set(properties.identifier, vertex);
                             this.Graph.set(properties.identifier, newLink);
+                            Array.from(this.GVertices.entries()).forEach(function (_a) {
+                                var key = _a[0], value = _a[1];
+                                console.log(key, value);
+                            });
                         }
                         return [2 /*return*/, result];
                 }
@@ -102,6 +109,7 @@ var Graph = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        console.log(properties);
                         identifier = properties.identifier;
                         if (!identifier) {
                             throw new Error("Identifier is required");
@@ -116,7 +124,7 @@ var Graph = /** @class */ (function () {
                     case 1:
                         result = _a.sent();
                         if (!remote) {
-                            // Remove vertex and associated link data
+                            // vertex and associated link data
                             this.GVertices.delete(identifier);
                             this.Graph.delete(identifier);
                         }
@@ -125,21 +133,18 @@ var Graph = /** @class */ (function () {
             });
         });
     };
-    Graph.prototype.addEdge = function (source_id, relationType, sourceLabel, sourcePropName, sourcePropValue, targetLabel, targetPropName, targetPropValue, properties, remote) {
+    Graph.prototype.addEdge = function (relationType, sourceLabel, sourcePropName, sourcePropValue, targetLabel, targetPropName, targetPropValue, properties, remote) {
         return __awaiter(this, void 0, void 0, function () {
             var edgeId, existingEdge, query, params, result, edge;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (this.GVertices.get(source_id) == undefined) {
-                            Array.from(this.GVertices.entries()).forEach(function (_a) {
-                                var key = _a[0], value = _a[1];
-                                console.log(key, value);
-                            });
+                        console.log(properties, sourcePropValue);
+                        if (this.GVertices.get(sourcePropValue) == undefined) {
+                            console.log('called for some fucking reason');
                             throw new Error("Source vertex undefined");
                         }
-                        console.log(properties);
                         //check for id
                         if (!properties.identifier) {
                             throw new Error("Identifier is required for the edge");
@@ -169,7 +174,6 @@ var Graph = /** @class */ (function () {
                         }
                         edge = {
                             id: edgeId,
-                            source_id: source_id,
                             sourceLabel: sourceLabel,
                             sourcePropName: sourcePropName,
                             sourcePropValue: sourcePropValue,
@@ -181,16 +185,16 @@ var Graph = /** @class */ (function () {
                         };
                         if (!remote) {
                             this.GEdges.set(edgeId, edge);
-                            (_a = this.Graph.get(source_id)) === null || _a === void 0 ? void 0 : _a.edge_List.push([edge]);
+                            (_a = this.Graph.get(sourcePropValue)) === null || _a === void 0 ? void 0 : _a.edge_List.push([edge]);
                         }
                         return [2 /*return*/, result];
                 }
             });
         });
     };
-    Graph.prototype.removeEdge = function (sourceId, edgeId, relationType, properties, remote) {
+    Graph.prototype.removeEdge = function (relationType, properties, remote) {
         return __awaiter(this, void 0, void 0, function () {
-            var query, params, result, edgeList, index;
+            var query, params, result, edge, edgeList, index;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
@@ -210,13 +214,13 @@ var Graph = /** @class */ (function () {
                     case 3:
                         result = _b.sent();
                         if (!remote) {
-                            // console.log("Removing the edge from the local data")
-                            this.GEdges.delete(properties.identifier);
-                            edgeList = (_a = this.Graph.get(sourceId)) === null || _a === void 0 ? void 0 : _a.edge_List;
-                            index = edgeList === null || edgeList === void 0 ? void 0 : edgeList.toArray().findIndex(function (e) { return e.id === edgeId; });
+                            edge = this.GEdges.get(properties.identifier);
+                            edgeList = (_a = this.Graph.get(edge === null || edge === void 0 ? void 0 : edge.sourcePropValue)) === null || _a === void 0 ? void 0 : _a.edge_List;
+                            index = edgeList === null || edgeList === void 0 ? void 0 : edgeList.toArray().findIndex(function (e) { return e.id === properties.identifier; });
                             if (index !== undefined && index >= 0) {
                                 edgeList === null || edgeList === void 0 ? void 0 : edgeList.delete(index);
                             }
+                            this.GEdges.delete(properties.identifier);
                             // console.log(JSON.stringify(GEdges, null, 2));
                         }
                         return [2 /*return*/, result];
