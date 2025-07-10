@@ -1,7 +1,6 @@
 //Adding unique identifier generator - UUID, append serverid, or smth else
 
 import * as Y from 'yjs';
-const { executeCypherQuery } = require('./app');
 import { v4 as uuidv4 } from 'uuid';
 import { BackupProgressInfo } from 'node:sqlite';
 
@@ -34,12 +33,14 @@ export class Graph {
   private GVertices: Y.Map<VertexInformation>;
   private GEdges: Y.Map<EdgeInformation>;
   private Graph: Y.Map<Link>;
+  private executeCypherQuery: (query: string, params?: any) => Promise<any>;
 
-  constructor(ydoc: Y.Doc) {
+  constructor(ydoc: Y.Doc, executeCypherQuery: (query: string, params?: any) => Promise<any>) {
     this.ydoc = ydoc;
     this.GVertices = ydoc.getMap('GVertices');
     this.GEdges = ydoc.getMap('GEdges');
     this.Graph = ydoc.getMap('Graph');
+    this.executeCypherQuery = executeCypherQuery;
   }
 
   public async addVertex(
@@ -69,8 +70,8 @@ export class Graph {
 
     // Build and execute Cypher query
     const query = `CREATE (n:${label} $properties) RETURN n`;
-    const params = { label, properties };
-    const result = await executeCypherQuery(query, params);
+    const params = { label:label, properties: properties, };
+    const result = await this.executeCypherQuery(query, params);
 
     if (result.records.length === 0) {
       throw new Error("Failed to create vertex");
@@ -116,7 +117,7 @@ export class Graph {
     const query = `MATCH (n:${label} {identifier: $identifier}) DETACH DELETE n`;
     const params = { identifier };
 
-    const result = await executeCypherQuery(query, params);
+    const result = await this.executeCypherQuery(query, params);
 
     if (!remote) {
       // Remove vertex and associated link data
@@ -140,6 +141,11 @@ export class Graph {
   ) {
 
     if (this.GVertices.get(source_id) == undefined) {
+      Array.from(this.GVertices.entries()).forEach(([key, value]) => {
+        console.log(key, value);
+      });
+
+
       throw new Error("Source vertex undefined");
     }
     console.log(properties);
@@ -158,12 +164,15 @@ export class Graph {
     }
 
     //Cypher Query
-    const query =
-      `MATCH (a:${sourceLabel} {${sourcePropName}: "${sourcePropValue}"}), 
-    (b:${targetLabel} {${targetPropName}: "${targetPropValue}"})
-     CREATE (a)-[r:${relationType} $properties]->(b) 
-     RETURN r;
-  `;
+    //const query = `MATCH (a:${sourceLabel} {${sourcePropName}: "${sourcePropValue}"}),  (b:${targetLabel} {${targetPropName}: "${targetPropValue}"})     CREATE (a)-[r:${relationType} $properties]->(b)   RETURN r;`;
+    const query = `
+      MATCH (a:${sourceLabel} {${sourcePropName}: $sourcePropValue}), 
+            (b:${targetLabel} {${targetPropName}: $targetPropValue})
+      CREATE (a)-[r:${relationType}]->(b)
+      SET r += $properties
+      RETURN r;
+        `;
+
 
     const params = {
       sourceLabel: sourceLabel,
@@ -176,7 +185,7 @@ export class Graph {
       relationType: relationType
     };
 
-    const result = await executeCypherQuery(query, params);
+    const result = await this.executeCypherQuery(query, params);
 
     if (result.records.length === 0) {
       throw new Error("Failed to create edge");
@@ -217,7 +226,7 @@ export class Graph {
         relationType: relationType,
         properties: properties,
       };
-      const result = await executeCypherQuery(query, params);
+      const result = await this.executeCypherQuery(query, params);
       if (!remote) {
         // console.log("Removing the edge from the local data")
         this.GEdges.delete(properties.identifier);
@@ -235,6 +244,8 @@ export class Graph {
 
   public observe(callback: () => void) {
     this.GVertices.observeDeep(callback);
+    this.GEdges.observeDeep(callback);
+    this.Graph.observeDeep(callback);
   }
 
   public getVertex(id: string): VertexInformation | undefined {
