@@ -45,10 +45,10 @@ const wsProvider = new WebsocketProvider(process.env.WS_URI, 'GraceSyncKey', ydo
 
 
 
-// optionally, observe all changes in your Graph and persist or rebroadcast
-graph.observe(() => {
-  const update = Y.encodeStateAsUpdate(ydoc);
-});
+// observe all changes in the graph (if needed for debugging)
+//graph.observe(() => {
+//  const update = Y.encodeStateAsUpdate(ydoc);
+//});
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");

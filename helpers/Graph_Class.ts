@@ -42,6 +42,7 @@ export class Graph {
     this.GEdges = ydoc.getMap('GEdges');
     this.Graph = ydoc.getMap('Graph');
     this.executeCypherQuery = executeCypherQuery;
+    this.setupObservers();
   }
 
   public async addVertex(
@@ -60,8 +61,8 @@ export class Graph {
     //    throw new Error("Identifier is required for remote vertex");
     //  }
     //}
-    if(properties.identifier == undefined){
-       throw new Error("Identifier is required");
+    if (properties.identifier == undefined) {
+      throw new Error("Identifier is required");
     }
 
     const existingVertex = this.GVertices.get(properties.identifier);
@@ -75,7 +76,7 @@ export class Graph {
 
     // Build and execute Cypher query
     const query = `CREATE (n:${label} $properties) RETURN n`;
-    const params = { label:label, properties: properties, };
+    const params = { label: label, properties: properties, };
     const result = await this.executeCypherQuery(query, params);
 
     if (result.records.length === 0) {
@@ -249,11 +250,50 @@ export class Graph {
     }
   }
 
-  public observe(callback: () => void) {
-    this.GVertices.observeDeep(callback);
-    this.GEdges.observeDeep(callback);
-    this.Graph.observeDeep(callback);
+  private setupObservers() {
+    this.GVertices.observe((event, transaction) => {
+      if (!transaction.local) {
+        event.changes.keys.forEach((change, key) => {
+          if (change.action === 'add') {
+            const vertex = this.GVertices.get(key);
+            if (vertex) {
+              this.addVertex(vertex.label, vertex.properties, true).catch(console.error);
+            }
+          } else if (change.action === 'delete') {
+            const oldValue = change.oldValue as VertexInformation;
+            this.removeVertex(oldValue.label, oldValue.properties, true).catch(console.error);
+          }
+        });
+      }
+    });
+
+    this.GEdges.observe((event, transaction) => {
+      if (!transaction.local) {
+        event.changes.keys.forEach((change, key) => {
+          if (change.action === 'add') {
+            const edge = this.GEdges.get(key);
+            if (edge) {
+              this.addEdge(
+                edge.relationType,
+                edge.sourceLabel,
+                edge.sourcePropName,
+                edge.sourcePropValue,
+                edge.targetLabel,
+                edge.targetPropName,
+                edge.targetPropValue,
+                edge.properties,
+                true
+              ).catch(console.error);
+            }
+          } else if (change.action === 'delete') {
+            const oldValue = change.oldValue as EdgeInformation;
+            this.removeEdge(oldValue.relationType, oldValue.properties, true).catch(console.error);
+          }
+        });
+      }
+    });
   }
+
 
   public getVertex(id: string): VertexInformation | undefined {
     return this.GVertices.get(id);

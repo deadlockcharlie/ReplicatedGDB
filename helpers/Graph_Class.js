@@ -1,5 +1,7 @@
 "use strict";
 //Adding unique identifier generator - UUID, append serverid, or smth else
+//removing dangling edges
+//pre condition that source and target are edges
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -46,6 +48,7 @@ var Graph = /** @class */ (function () {
         this.GEdges = ydoc.getMap('GEdges');
         this.Graph = ydoc.getMap('Graph');
         this.executeCypherQuery = executeCypherQuery;
+        this.setupObservers();
     }
     Graph.prototype.addVertex = function (label, properties, remote) {
         return __awaiter(this, void 0, void 0, function () {
@@ -93,10 +96,9 @@ var Graph = /** @class */ (function () {
                             };
                             this.GVertices.set(properties.identifier, vertex);
                             this.Graph.set(properties.identifier, newLink);
-                            Array.from(this.GVertices.entries()).forEach(function (_a) {
-                                var key = _a[0], value = _a[1];
-                                console.log(key, value);
-                            });
+                            //Array.from(this.GVertices.entries()).forEach(([key, value]) => {
+                            //  console.log(key, value);
+                            //});
                         }
                         return [2 /*return*/, result];
                 }
@@ -228,10 +230,40 @@ var Graph = /** @class */ (function () {
             });
         });
     };
-    Graph.prototype.observe = function (callback) {
-        this.GVertices.observeDeep(callback);
-        this.GEdges.observeDeep(callback);
-        this.Graph.observeDeep(callback);
+    Graph.prototype.setupObservers = function () {
+        var _this = this;
+        this.GVertices.observe(function (event, transaction) {
+            if (!transaction.local) {
+                event.changes.keys.forEach(function (change, key) {
+                    if (change.action === 'add') {
+                        var vertex = _this.GVertices.get(key);
+                        if (vertex) {
+                            _this.addVertex(vertex.label, vertex.properties, true).catch(console.error);
+                        }
+                    }
+                    else if (change.action === 'delete') {
+                        var oldValue = change.oldValue;
+                        _this.removeVertex(oldValue.label, oldValue.properties, true).catch(console.error);
+                    }
+                });
+            }
+        });
+        this.GEdges.observe(function (event, transaction) {
+            if (!transaction.local) {
+                event.changes.keys.forEach(function (change, key) {
+                    if (change.action === 'add') {
+                        var edge = _this.GEdges.get(key);
+                        if (edge) {
+                            _this.addEdge(edge.relationType, edge.sourceLabel, edge.sourcePropName, edge.sourcePropValue, edge.targetLabel, edge.targetPropName, edge.targetPropValue, edge.properties, true).catch(console.error);
+                        }
+                    }
+                    else if (change.action === 'delete') {
+                        var oldValue = change.oldValue;
+                        _this.removeEdge(oldValue.relationType, oldValue.properties, true).catch(console.error);
+                    }
+                });
+            }
+        });
     };
     Graph.prototype.getVertex = function (id) {
         return this.GVertices.get(id);
