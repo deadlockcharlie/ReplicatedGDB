@@ -1,4 +1,6 @@
 //Adding unique identifier generator - UUID, append serverid, or smth else
+//removing dangling edges
+//pre condition that source and target are edges
 
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -96,9 +98,9 @@ export class Graph {
 
       this.GVertices.set(properties.identifier, vertex);
       this.Graph.set(properties.identifier, newLink);
-      Array.from(this.GVertices.entries()).forEach(([key, value]) => {
-        console.log(key, value);
-      });
+      //Array.from(this.GVertices.entries()).forEach(([key, value]) => {
+      //  console.log(key, value);
+      //});
     }
 
     return result;
