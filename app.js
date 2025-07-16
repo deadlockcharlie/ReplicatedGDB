@@ -141,13 +141,6 @@ app.post('/api/deleteEdge', async (req, res) => {
   }
 });
 
-app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.message); // You control this output
-  res.status(500).json({
-    success: false,
-    error: err.message, // Send only the message
-  });
-});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -155,15 +148,15 @@ app.use(function (req, res, next) {
 });
 
 // error handler
-//app.use(function (err, req, res, next) {
-//  // set locals, only providing error in development
-//  res.locals.message = err.message;
-//  res.locals.error = req.app.get("env") === "development" ? err : {};
-//
-//  // render the error page
-//  res.status(err.status || 500);
-//  res.render("error");
-//});
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render("error");
+});
 
 function normalizePort(val) {
   var port = parseInt(val, 10);
