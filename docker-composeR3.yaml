@@ -6,14 +6,14 @@ services:
     container_name: neo4j3
     ports:
       - "7476:7474"   # HTTP
-      - "7689:7687"   # Bolt
+      - "7689:7688"   # Bolt
     environment:
       NEO4J_AUTH: neo4j/verysecretpassword
     healthcheck:
-      test: cypher-shell -u neo4j -p verysecretpassword "SHOW DATABASES"
+      test: [ "CMD", "bash", "-c", "cypher-shell -u neo4j -p verysecretpassword 'RETURN 1'" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app3:
     build: 

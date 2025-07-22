@@ -1,24 +1,20 @@
-
-
 services:
   neo4j1:
     image: neo4j:latest
     container_name: neo4j1
     ports:
-      - "7474:7474"   # HTTP
-      - "7687:7687"   # Bolt
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
     environment:
       NEO4J_AUTH: neo4j/verysecretpassword
     healthcheck:
-      test: cypher-shell -u neo4j -p verysecretpassword "SHOW DATABASES"
+      test: [ "CMD", "bash", "-c", "cypher-shell -u neo4j -p verysecretpassword 'RETURN 1'" ]
       interval: 10s
       timeout: 5s
-      retries: 5
-
-
+      retries: 10
 
   app1:
-    build: 
+    build:
       context: .
       dockerfile: GRACEDockerfile
     container_name: GRACE1
@@ -32,5 +28,3 @@ services:
     depends_on:
       neo4j1:
         condition: service_healthy
-
-
