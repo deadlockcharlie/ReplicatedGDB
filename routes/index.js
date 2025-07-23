@@ -24,7 +24,6 @@ router.get('/',jsonParser, async function(req, res, next) {
     res.status(500).send('Internal Server Error');
   }
 
-  // res.render('index', { title: 'GDB', body: 'Welcome to a very nice graph DB application' });
 
 });
 

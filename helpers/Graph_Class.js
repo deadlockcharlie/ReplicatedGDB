@@ -41,6 +41,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Graph = void 0;
 var Y = require("yjs");
+var Logging_1 = require("../helpers/Logging");
 var Graph = /** @class */ (function () {
     function Graph(ydoc, executeCypherQuery) {
         this.ydoc = ydoc;
@@ -56,19 +57,6 @@ var Graph = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("Adding vertex with label:", label);
-                        console.log("Remote:", remote);
-                        // Ensure identifier exists or generate one if not remote
-                        //if (!properties.identifier) {
-                        //  if (!remote) {
-                        //    properties.identifier = `${label}_${uuidv4()}`; // default fallback
-                        //  } else {
-                        //    throw new Error("Identifier is required for remote vertex");
-                        //  }
-                        //}
-                        if (properties.identifier == undefined) {
-                            throw new Error("Identifier is required");
-                        }
                         existingVertex = this.GVertices.get(properties.identifier);
                         // Prevent duplicate entries if not remote
                         if (existingVertex && !remote) {
@@ -84,7 +72,6 @@ var Graph = /** @class */ (function () {
                         }
                         // Only update local structures if not a remote sync
                         if (!remote) {
-                            console.log('CALLED!');
                             vertex = {
                                 id: properties.identifier,
                                 label: label,
@@ -113,9 +100,6 @@ var Graph = /** @class */ (function () {
                     case 0:
                         console.log(properties);
                         identifier = properties.identifier;
-                        if (!identifier) {
-                            throw new Error("Identifier is required");
-                        }
                         exists = this.GVertices.get(identifier);
                         if (!exists && !remote) {
                             throw new Error("Vertex with identifier \"".concat(identifier, "\" does not exist"));
@@ -142,14 +126,9 @@ var Graph = /** @class */ (function () {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        console.log(properties, sourcePropValue);
+                        // console.log(properties, sourcePropValue);
                         if (this.GVertices.get(sourcePropValue) == undefined) {
-                            console.log('called for some fucking reason');
                             throw new Error("Source vertex undefined");
-                        }
-                        //check for id
-                        if (!properties.identifier) {
-                            throw new Error("Identifier is required for the edge");
                         }
                         edgeId = properties.identifier;
                         existingEdge = this.GEdges.get(edgeId);
@@ -157,7 +136,7 @@ var Graph = /** @class */ (function () {
                         if (existingEdge && !remote) {
                             throw new Error("Edge with identifier \"".concat(edgeId, "\" already exists"));
                         }
-                        query = "\n      MATCH (a:".concat(sourceLabel, " {").concat(sourcePropName, ": $sourcePropValue}), \n            (b:").concat(targetLabel, " {").concat(targetPropName, ": $targetPropValue})\n      CREATE (a)-[r:").concat(relationType, "]->(b)\n      SET r += $properties\n      RETURN r;\n        ");
+                        query = "\n      MATCH (a:".concat(sourceLabel, " {").concat(sourcePropName, ": \"").concat(sourcePropValue, "\"}), \n            (b:").concat(targetLabel, " {").concat(targetPropName, ": \"").concat(targetPropValue, "\"})\n      CREATE (a)-[r:").concat(relationType, "]->(b)\n      SET r += $properties\n      RETURN r;\n        ");
                         params = {
                             sourceLabel: sourceLabel,
                             sourcePropName: sourcePropName,
@@ -171,6 +150,7 @@ var Graph = /** @class */ (function () {
                         return [4 /*yield*/, this.executeCypherQuery(query, params)];
                     case 1:
                         result = _b.sent();
+                        Logging_1.logger.error(JSON.stringify(result));
                         if (result.records.length === 0) {
                             throw new Error("Failed to create edge");
                         }
