@@ -36,23 +36,7 @@ var {WebsocketProvider} = require("y-websocket");
 const { Vertex_Edge } = require('./helpers/Graph_Class');
 const {Graph} = require('./helpers/GraphManager')
 
-const { fromUint8Array, toUint8Array } = require("js-base64");
 
-var neo4j = require("neo4j-driver");
-
-
-console.log("Connecting to neo4j on Bolt port:", process.env.NEO4J_URI);
-driver = neo4j.driver(process.env.NEO4J_URI, neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD));
-
-executeCypherQuery = async (statement, params = {}) => {
-  session = driver.session();
-  try {
-    const result = await session.run(statement, params);
-    return result;
-  } catch (error) {
-    throw error; // we are logging this error at the time of calling this method
-  }
-};
 
 ydoc = new Y.Doc();
 const GraphManager = new Graph();
