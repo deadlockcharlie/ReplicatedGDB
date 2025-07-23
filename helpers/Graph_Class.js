@@ -40,6 +40,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vertex_Edge = void 0;
+var app_1 = require("../app");
 var Vertex_Edge = /** @class */ (function () {
     function Vertex_Edge(ydoc, executeCypherQuery, listener) {
         this.ydoc = ydoc;
@@ -55,6 +56,7 @@ var Vertex_Edge = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        app_1.logger.info("Adding vertex with label ".concat(label, ", remote is : ").concat(remote));
                         existingVertex = this.GVertices.get(properties.identifier);
                         // Prevent duplicate entries if not remote
                         if (existingVertex && !remote) {
