@@ -2,8 +2,8 @@ services:
   wsserver:
     container_name: wsserver
     build: 
-      context: .
-      dockerfile: WSServerDockerfile
+      context: ..
+      dockerfile: ./Dockerfiles/WSServerDockerfile
     ports:
       - "1234:1234"    
     environment:
