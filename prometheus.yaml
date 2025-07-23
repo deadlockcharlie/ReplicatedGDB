@@ -1,0 +1,4 @@
+scrape_configs:
+  - job_name: 'app1'
+    static_configs:
+      - targets: ['app1:3000']
