@@ -5,7 +5,7 @@
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
 import { BackupProgressInfo } from 'node:sqlite';
-import {logger} from "../app";
+import {logger} from "../helpers/Logging";
 
 export type EdgeInformation = {
   id: string,
@@ -53,7 +53,7 @@ export class Vertex_Edge {
     properties: { [key: string]: any },
     remote: boolean
   ) {
-    logger.info(`Adding vertex with label ${label}, remote is : ${remote}`);
+    // logger.info(`Adding vertex with label ${label}, remote is : ${remote}`);
 
     // Ensure identifier exists or generate one if not remote
     //if (!properties.identifier) {
@@ -67,7 +67,7 @@ export class Vertex_Edge {
     //   throw new Error("Identifier is required");
     // } 
     // This check has been performed in the schema validation step in routers. 
-
+    
     const existingVertex = this.GVertices.get(properties.identifier);
 
     // Prevent duplicate entries if not remote
@@ -152,10 +152,10 @@ export class Vertex_Edge {
     }
 
 
-    //check for id
-    if (!properties.identifier) {
-      throw new Error("Identifier is required for the edge");
-    }
+    // //check for id
+    // if (!properties.identifier) {
+    //   throw new Error("Identifier is required for the edge");
+    // }
 
     const edgeId = properties.identifier;
 
@@ -166,10 +166,10 @@ export class Vertex_Edge {
     }
 
     //Cypher Query
-    //const query = `MATCH (a:${sourceLabel} {${sourcePropName}: "${sourcePropValue}"}),  (b:${targetLabel} {${targetPropName}: "${targetPropValue}"})     CREATE (a)-[r:${relationType} $properties]->(b)   RETURN r;`;
+    // const query = `MATCH (a:${sourceLabel} {${sourcePropName}: "${sourcePropValue}"}),  (b:${targetLabel} {${targetPropName}: "${targetPropValue}"})     CREATE (a)-[r:${relationType} $properties]->(b)   RETURN r;`;
     const query = `
-      MATCH (a:${sourceLabel} {${sourcePropName}: $sourcePropValue}), 
-            (b:${targetLabel} {${targetPropName}: $targetPropValue})
+      MATCH (a:${sourceLabel} {${sourcePropName}: "${sourcePropValue}"}), 
+            (b:${targetLabel} {${targetPropName}: "${targetPropValue}"})
       CREATE (a)-[r:${relationType}]->(b)
       SET r += $properties
       RETURN r;
@@ -188,7 +188,7 @@ export class Vertex_Edge {
     };
 
     const result = await this.executeCypherQuery(query, params);
-
+    logger.error(JSON.stringify(result));
     if (result.records.length === 0) {
       throw new Error("Failed to create edge");
     }

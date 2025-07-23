@@ -2,7 +2,20 @@ var createError = require("http-errors");
 var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
-const logger = require("./helpers/Logging");
+const {logger} = require("./helpers/Logging");
+
+const client = require("prom-client");
+const register = new client.Registry();
+
+client.collectDefaultMetrics({ register });
+
+// Custom metric: count of HTTP requests
+const httpRequests = new client.Counter({
+  name: "http_requests_total",
+  help: "Total number of HTTP requests",
+});
+register.registerMetric(httpRequests);
+
 const {
   query,
   checkSchema,
@@ -43,10 +56,6 @@ var getGraphRouter = require("./routes/getGraph");
 
 var app = express();
 
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "jade");
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -55,6 +64,12 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/api/getGraph", getGraphRouter);
+
+// Metrics endpoint
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.end(await register.metrics());
+});
 
 app.post(
   "/api/addVertex",
@@ -71,7 +86,7 @@ app.post(
       try {
         const { label, properties } = req.body;
         const result = await graph.addVertex(label, properties, false);
-        logger.info(`Vertex added: ${JSON.stringify(result)}`);
+        logger.info(`Vertex added: ${JSON.stringify({"label": label, "properties":properties})}`);
         res.json(result);
       } catch (err) {
         logger.error(`Error adding vertex ${err}`);
@@ -144,12 +159,11 @@ app.post(
           properties,
           false
         );
-        logger.info(`Edge added: ${JSON.stringify(result)}`);
-        res.json(result);
+        res.json("Edge Added");
       } catch (err) {
         logger.error(`Error adding edge ${err}`);
         res.status(500);
-        res.json("Error adding edge");
+        res.json(`Error adding edge ${err}`);
       }
     }
   }
@@ -196,7 +210,7 @@ app.use(function (err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render("error");
+  res.send("error");
 });
 
 function normalizePort(val) {
@@ -215,8 +229,4 @@ function normalizePort(val) {
   return false;
 }
 
-module.exports = {
-  app,
-  logger,
-  executeCypherQuery 
-};
+module.exports = { logger, executeCypherQuery, app };

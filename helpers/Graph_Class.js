@@ -39,10 +39,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Vertex_Edge = void 0;
-var app_1 = require("../app");
-var Vertex_Edge = /** @class */ (function () {
-    function Vertex_Edge(ydoc, executeCypherQuery, listener) {
+exports.Graph = void 0;
+var Y = require("yjs");
+var Logging_1 = require("../helpers/Logging");
+var Graph = /** @class */ (function () {
+    function Graph(ydoc, executeCypherQuery) {
         this.ydoc = ydoc;
         this.GVertices = ydoc.getMap('GVertices');
         this.GEdges = ydoc.getMap('GEdges');
@@ -56,7 +57,6 @@ var Vertex_Edge = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        app_1.logger.info("Adding vertex with label ".concat(label, ", remote is : ").concat(remote));
                         existingVertex = this.GVertices.get(properties.identifier);
                         // Prevent duplicate entries if not remote
                         if (existingVertex && !remote) {
@@ -118,13 +118,9 @@ var Vertex_Edge = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log(properties, sourcePropValue);
-                        if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
-                            throw new Error("verteces undefined");
-                        }
-                        //check for id
-                        if (!properties.identifier) {
-                            throw new Error("Identifier is required for the edge");
+                        // console.log(properties, sourcePropValue);
+                        if (this.GVertices.get(sourcePropValue) == undefined) {
+                            throw new Error("Source vertex undefined");
                         }
                         edgeId = properties.identifier;
                         existingEdge = this.GEdges.get(edgeId);
@@ -132,7 +128,7 @@ var Vertex_Edge = /** @class */ (function () {
                         if (existingEdge && !remote) {
                             throw new Error("Edge with identifier \"".concat(edgeId, "\" already exists"));
                         }
-                        query = "\n      MATCH (a:".concat(sourceLabel, " {").concat(sourcePropName, ": $sourcePropValue}), \n            (b:").concat(targetLabel, " {").concat(targetPropName, ": $targetPropValue})\n      CREATE (a)-[r:").concat(relationType, "]->(b)\n      SET r += $properties\n      RETURN r;\n        ");
+                        query = "\n      MATCH (a:".concat(sourceLabel, " {").concat(sourcePropName, ": \"").concat(sourcePropValue, "\"}), \n            (b:").concat(targetLabel, " {").concat(targetPropName, ": \"").concat(targetPropValue, "\"})\n      CREATE (a)-[r:").concat(relationType, "]->(b)\n      SET r += $properties\n      RETURN r;\n        ");
                         params = {
                             sourceLabel: sourceLabel,
                             sourcePropName: sourcePropName,
@@ -145,7 +141,8 @@ var Vertex_Edge = /** @class */ (function () {
                         };
                         return [4 /*yield*/, this.executeCypherQuery(query, params)];
                     case 1:
-                        result = _a.sent();
+                        result = _b.sent();
+                        Logging_1.logger.error(JSON.stringify(result));
                         if (result.records.length === 0) {
                             throw new Error("Failed to create edge");
                         }
