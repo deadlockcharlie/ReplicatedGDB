@@ -92,10 +92,7 @@ function onListening() {
   //
 
   // If the middleware crashes and restarts, it needs to reinitialise the database. 
-
-  executeCypherQuery("MATCH (n) DETACH DELETE n");
-  executeCypherQuery("MATCH ()-[r]->() DELETE r");
-  console.log("Database reinitialised. Any existing data has been deleted from the local database. Commencing sync with remote database...");
+  
   var addr = server.address();
   var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   debug("Listening on " + bind);
