@@ -5,7 +5,7 @@
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
 import { BackupProgressInfo } from 'node:sqlite';
-import {logger} from "../helpers/Logging";
+import {logger} from "./Logging";
 
 export type EdgeInformation = {
   id: string,
