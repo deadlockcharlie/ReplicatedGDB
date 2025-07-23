@@ -4,7 +4,7 @@
 
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
-import { BackupProgressInfo } from 'node:sqlite';
+//import { BackupProgressInfo } from 'node:sqlite';
 
 export type EdgeInformation = {
   id: string,
@@ -24,23 +24,25 @@ export type VertexInformation = {
   properties: { [key: string]: any }
 }
 
-export type Link = {
-  id_vertex: string,
-  edge_List: Y.Array<EdgeInformation>;
+export type Listener = {
+  addVertex: (id: string) => void;
+  deleteVertex: (id: string) => void;
+  addEdge: (id: string, edge: EdgeInformation) => void;
+  deleteEdge: (id: string, edge: EdgeInformation) => void;
 }
 
-export class Graph {
+export class Vertex_Edge {
   private ydoc: Y.Doc;
   private GVertices: Y.Map<VertexInformation>;
-  private GEdges: Y.Map<EdgeInformation>;
-  private Graph: Y.Map<Link>;
+  private GEdges: Y.Map<EdgeInformation>; 
+  private listener: Listener;
   private executeCypherQuery: (query: string, params?: any) => Promise<any>;
 
-  constructor(ydoc: Y.Doc, executeCypherQuery: (query: string, params?: any) => Promise<any>) {
+  constructor(ydoc: Y.Doc, executeCypherQuery: (query: string, params?: any) => Promise<any>, listener: Listener) {
     this.ydoc = ydoc;
     this.GVertices = ydoc.getMap('GVertices');
     this.GEdges = ydoc.getMap('GEdges');
-    this.Graph = ydoc.getMap('Graph');
+    this.listener = listener;
     this.executeCypherQuery = executeCypherQuery;
     this.setupObservers();
   }
@@ -85,23 +87,14 @@ export class Graph {
 
     // Only update local structures if not a remote sync
     if (!remote) {
-      console.log('CALLED!')
       const vertex: VertexInformation = {
         id: properties.identifier,
         label,
         properties,
       };
 
-      const newLink: Link = {
-        id_vertex: properties.identifier,
-        edge_List: new Y.Array<EdgeInformation>(),
-      };
-
       this.GVertices.set(properties.identifier, vertex);
-      this.Graph.set(properties.identifier, newLink);
-      //Array.from(this.GVertices.entries()).forEach(([key, value]) => {
-      //  console.log(key, value);
-      //});
+      this.listener.addVertex(properties.identifier);
     }
 
     return result;
@@ -134,7 +127,7 @@ export class Graph {
 
       // vertex and associated link data
       this.GVertices.delete(identifier);
-      this.Graph.delete(identifier);
+      this.listener.deleteVertex(identifier)
     }
     return result
   }
@@ -152,9 +145,8 @@ export class Graph {
   ) {
 
     console.log(properties, sourcePropValue);
-    if (this.GVertices.get(sourcePropValue) == undefined) {
-      console.log('called for some fucking reason')
-      throw new Error("Source vertex undefined");
+    if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
+      throw new Error("verteces undefined");
     }
 
 
@@ -214,7 +206,7 @@ export class Graph {
 
     if (!remote) {
       this.GEdges.set(edgeId, edge);
-      this.Graph.get(sourcePropValue)?.edge_List.push([edge]);
+      this.listener.addEdge(sourceLabel, edge)
     }
 
     return result;
@@ -222,10 +214,14 @@ export class Graph {
 
   public async removeEdge(relationType: string, properties: any, remote: boolean) {
     // Ensure the a unique identifier is provided
+
     if (!properties.identifier || !relationType) {
       throw new Error("Identifier and relation type is required to delete an edge");
     }
-    else if (this.GEdges.get(properties.identifier) == undefined && !remote) {
+
+    const edge = this.GEdges.get(properties.identifier);
+
+    if (edge == undefined && !remote) {
       throw new Error("Edge with this identifier does not exist");
     } else {
       const query = `MATCH ()-[r:${relationType} {identifier: $properties.identifier}]-() DELETE r`;
@@ -235,16 +231,9 @@ export class Graph {
       };
       const result = await this.executeCypherQuery(query, params);
       if (!remote) {
-        // console.log("Removing the edge from the local data")
-        const edge = this.GEdges.get(properties.identifier);
-        const edgeList = this.Graph.get(edge?.sourcePropValue)?.edge_List;
-        const index = edgeList?.toArray().findIndex(e => e.id === properties.identifier);
-        if (index !== undefined && index >= 0) {
-          edgeList?.delete(index);
-        }
+        if (edge == undefined){throw Error('Undefined Edge')}
+        this.listener.deleteEdge(edge.sourceLabel, edge)
         this.GEdges.delete(properties.identifier);
-
-        // console.log(JSON.stringify(GEdges, null, 2));
       }
       return result;
     }
@@ -297,9 +286,5 @@ export class Graph {
 
   public getVertex(id: string): VertexInformation | undefined {
     return this.GVertices.get(id);
-  }
-
-  public getArrayEdges(id: string): Y.Array<EdgeInformation> | undefined {
-    return this.Graph.get(id)?.edge_List;
   }
 } 

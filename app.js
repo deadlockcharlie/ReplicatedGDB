@@ -10,7 +10,8 @@ var jsonParser = bodyParser.json();
 
 var Y = require("yjs");
 var {WebsocketProvider} = require("y-websocket");
-const { Graph } = require('./helpers/Graph_Class');
+const { Vertex_Edge } = require('./helpers/Graph_Class');
+const {Graph} = require('./helpers/GraphManager')
 
 const { fromUint8Array, toUint8Array } = require("js-base64");
 
@@ -31,7 +32,8 @@ executeCypherQuery = async (statement, params = {}) => {
 };
 
 ydoc = new Y.Doc();
-const graph = new Graph(ydoc, executeCypherQuery);
+const GraphManager = new Graph();
+const graph = new Vertex_Edge(ydoc, executeCypherQuery, GraphManager);
 vertexCount = 0;
 
 const wsProvider = new WebsocketProvider(process.env.WS_URI, 'GraceSyncKey', ydoc, { WebSocketPolyfill: require('ws') });
