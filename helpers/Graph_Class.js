@@ -39,11 +39,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Graph = void 0;
-var Y = require("yjs");
-var Logging_1 = require("../helpers/Logging");
-var Graph = /** @class */ (function () {
-    function Graph(ydoc, executeCypherQuery) {
+exports.Vertex_Edge = void 0;
+var Vertex_Edge = /** @class */ (function () {
+    function Vertex_Edge(ydoc, executeCypherQuery, listener) {
         this.ydoc = ydoc;
         this.GVertices = ydoc.getMap('GVertices');
         this.GEdges = ydoc.getMap('GEdges');
@@ -118,9 +116,9 @@ var Graph = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        // console.log(properties, sourcePropValue);
-                        if (this.GVertices.get(sourcePropValue) == undefined) {
-                            throw new Error("Source vertex undefined");
+                        console.log(properties, sourcePropValue);
+                        if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
+                            throw new Error("verteces undefined");
                         }
                         edgeId = properties.identifier;
                         existingEdge = this.GEdges.get(edgeId);
@@ -141,8 +139,7 @@ var Graph = /** @class */ (function () {
                         };
                         return [4 /*yield*/, this.executeCypherQuery(query, params)];
                     case 1:
-                        result = _b.sent();
-                        Logging_1.logger.error(JSON.stringify(result));
+                        result = _a.sent();
                         if (result.records.length === 0) {
                             throw new Error("Failed to create edge");
                         }

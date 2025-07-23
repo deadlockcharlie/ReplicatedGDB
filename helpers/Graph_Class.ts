@@ -4,8 +4,7 @@
 
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
-import { BackupProgressInfo } from 'node:sqlite';
-import {logger} from "./Logging";
+//import { BackupProgressInfo } from 'node:sqlite';
 
 export type EdgeInformation = {
   id: string,
@@ -88,7 +87,6 @@ export class Vertex_Edge {
 
     // Only update local structures if not a remote sync
     if (!remote) {
-      // console.log('CALLED!')
       const vertex: VertexInformation = {
         id: properties.identifier,
         label,
