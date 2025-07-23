@@ -4,7 +4,8 @@
 
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
-//import { BackupProgressInfo } from 'node:sqlite';
+import { BackupProgressInfo } from 'node:sqlite';
+import {logger} from "../app";
 
 export type EdgeInformation = {
   id: string,
@@ -52,7 +53,7 @@ export class Vertex_Edge {
     properties: { [key: string]: any },
     remote: boolean
   ) {
-    // logger.info(`Adding vertex with label ${label}, remote is : ${remote}`);
+    logger.info(`Adding vertex with label ${label}, remote is : ${remote}`);
 
     // Ensure identifier exists or generate one if not remote
     //if (!properties.identifier) {
@@ -66,7 +67,7 @@ export class Vertex_Edge {
     //   throw new Error("Identifier is required");
     // } 
     // This check has been performed in the schema validation step in routers. 
-    
+
     const existingVertex = this.GVertices.get(properties.identifier);
 
     // Prevent duplicate entries if not remote
@@ -87,6 +88,7 @@ export class Vertex_Edge {
 
     // Only update local structures if not a remote sync
     if (!remote) {
+      // console.log('CALLED!')
       const vertex: VertexInformation = {
         id: properties.identifier,
         label,
@@ -108,6 +110,9 @@ export class Vertex_Edge {
     console.log(properties);
     const identifier = properties.identifier;
 
+    // if (!identifier) {
+    //   throw new Error("Identifier is required");
+    // }
     // if (!identifier) {
     //   throw new Error("Identifier is required");
     // }
