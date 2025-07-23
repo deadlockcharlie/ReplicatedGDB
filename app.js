@@ -3,52 +3,21 @@ var createError = require("http-errors");
 var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-var bodyParser = require("body-parser");
-var jsonParser = bodyParser.json();
-//var { addVertex, deleteVertex, addEdge,deleteEdge } = require("./helpers/CRUD");
+const logger = require('./helpers/Logging');
+
+const {executeCypherQuery} = require("./helpers/DatabaseDriver");
 
 var Y = require("yjs");
 var {WebsocketProvider} = require("y-websocket");
 const { Graph } = require('./helpers/Graph_Class');
 
-const { fromUint8Array, toUint8Array } = require("js-base64");
 
-var neo4j = require("neo4j-driver");
-
-
-console.log("Connecting to neo4j on Bolt port:", process.env.NEO4J_URI);
-driver = neo4j.driver(process.env.NEO4J_URI, neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD));
-
-executeCypherQuery = async (statement, params = {}) => {
-  session = driver.session();
-  try {
-    const result = await session.run(statement, params);
-    return result;
-  } catch (error) {
-    throw error; // we are logging this error at the time of calling this method
-  }
-};
 
 ydoc = new Y.Doc();
 const graph = new Graph(ydoc, executeCypherQuery);
 vertexCount = 0;
 
 const wsProvider = new WebsocketProvider(process.env.WS_URI, 'GraceSyncKey', ydoc, { WebSocketPolyfill: require('ws') });
-
-// const wrtcprovider = new WebrtcProvider("graphdb", ydoc, {
-//   signaling: ["ws://localhost:4444"],
-//   peerOpts: {
-//     wrtc: wrtc,
-//   },
-// });
-
-
-
-// observe all changes in the graph (if needed for debugging)
-//graph.observe(() => {
-//  const update = Y.encodeStateAsUpdate(ydoc);
-//});
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -60,7 +29,6 @@ var app = express();
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 
-app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -70,30 +38,33 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/api/getGraph", getGraphRouter);
 
-//app.use("/api/addVertex", addVertexRouter);
 app.post('/api/addVertex', async (req, res) => {
   try {
     const { label, properties } = req.body;
     const result = await graph.addVertex(label, properties, false);
+    logger.info(`Vertex added: ${JSON.stringify(result)}`);
     res.json(result);
   } catch (err) {
-    console.log(res, err);
+    logger.error(`Error adding vertex ${err}`);
+    res.status(500);
+    res.json("Error adding vertex");
   }
 });
 
-//app.use("/api/deleteVertex", deleteVertexRouter);
 app.post('/api/deleteVertex', async (req, res) => {
   try {
     const label = req.body.label; // you can pass label via query
     const properties = req.body.properties;
     const result = await graph.removeVertex(label, properties, false);
+    logger.info(`Vertex deleted: ${JSON.stringify(result)}`);
     res.json(result);
   } catch (err) {
-    console.log(res, err);
+    logger.error(`Error removing vertex ${err}`);
+    res.status(500);
+    res.json("Error removing vertex");
   }
 });
 
-//app.use("/api/addEdge", addEdgeRouter);
 app.post('/api/addEdge', async (req, res) => {
   try {
     const {
@@ -118,13 +89,16 @@ app.post('/api/addEdge', async (req, res) => {
       properties,
       false
     );
+    logger.info(`Edge added: ${JSON.stringify(result)}`);
     res.json(result);
+
   } catch (err) {
-    console.log(res, err);
+    logger.error(`Error adding edge ${err}`);
+    res.status(500);
+    res.json("Error adding edge");
   }
 });
 
-//app.use("/api/deleteEdge", deleteEdgeRouter);
 app.post('/api/deleteEdge', async (req, res) => {
   try {
     const relationType = req.body.relationType;
@@ -135,9 +109,12 @@ app.post('/api/deleteEdge', async (req, res) => {
       properties,
       false
     );
+    logger.info(`Edge deleted: ${JSON.stringify(result)}`);
     res.json(result);
   } catch (err) {
-    console.log(res, err);
+    logger.error(`Error deleting edge ${err}`);
+    res.status(500);
+    res.json("Error deleting edge");
   }
 });
 
