@@ -215,6 +215,8 @@ function normalizePort(val) {
   return false;
 }
 
-module.exports = app;
-module.exports.executeCypherQuery = executeCypherQuery;
-module.exports = { logger };
+module.exports = {
+  app,
+  logger,
+  executeCypherQuery 
+};

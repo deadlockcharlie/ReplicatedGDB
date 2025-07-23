@@ -40,6 +40,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vertex_Edge = void 0;
+var app_1 = require("../app");
 var Vertex_Edge = /** @class */ (function () {
     function Vertex_Edge(ydoc, executeCypherQuery, listener) {
         this.ydoc = ydoc;
@@ -55,19 +56,7 @@ var Vertex_Edge = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("Adding vertex with label:", label);
-                        console.log("Remote:", remote);
-                        // Ensure identifier exists or generate one if not remote
-                        //if (!properties.identifier) {
-                        //  if (!remote) {
-                        //    properties.identifier = `${label}_${uuidv4()}`; // default fallback
-                        //  } else {
-                        //    throw new Error("Identifier is required for remote vertex");
-                        //  }
-                        //}
-                        if (properties.identifier == undefined) {
-                            throw new Error("Identifier is required");
-                        }
+                        app_1.logger.info("Adding vertex with label ".concat(label, ", remote is : ").concat(remote));
                         existingVertex = this.GVertices.get(properties.identifier);
                         // Prevent duplicate entries if not remote
                         if (existingVertex && !remote) {
@@ -104,9 +93,6 @@ var Vertex_Edge = /** @class */ (function () {
                     case 0:
                         console.log(properties);
                         identifier = properties.identifier;
-                        if (!identifier) {
-                            throw new Error("Identifier is required");
-                        }
                         exists = this.GVertices.get(identifier);
                         if (!exists && !remote) {
                             throw new Error("Vertex with identifier \"".concat(identifier, "\" does not exist"));
