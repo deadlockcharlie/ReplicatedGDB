@@ -64,6 +64,7 @@ def generate_compose_file(i, config):
       lab{i+1}:
         image: memgraph/lab
         pull_policy: always
+        container_name: lab{i+1}
         depends_on:
           {db_name}:
             condition: service_healthy
@@ -78,6 +79,7 @@ def generate_compose_file(i, config):
           """)
 
     content = dedent(f"""
+    name: grace{i+1}
     services:
       {databaseService}
 

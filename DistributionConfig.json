@@ -1,5 +1,5 @@
 {
-  "n": 1,
+  "n": 0,
   "database":"memgraph",
   "base_http_port": 7474,
   "base_bolt_port": 7687,

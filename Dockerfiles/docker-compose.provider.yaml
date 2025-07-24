@@ -1,3 +1,4 @@
+name: Provider
 services:
   wsserver:
     container_name: wsserver
@@ -9,3 +10,7 @@ services:
     environment:
        PORT: "1234"
        HOST: "wsserver"
+    networks:
+      - Provider_net
+networks:
+  Provider_net:
