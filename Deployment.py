@@ -141,9 +141,9 @@ def up_all():
     files = generate_all()
     for file in files:
         print(f"Starting containers from {file}...")
-        subprocess.run(["docker-compose", "-f", file, "up", "-d", "--force-recreate"], check=True)
+        subprocess.run(["docker-compose", "-f", file, "up","--build", "-d", "--force-recreate"], check=True)
     if(config["provider"]):
-        subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml', "up", "-d", "--force-recreate"], check=True)
+        subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml', "up","--build", "-d", "--force-recreate"], check=True)
     
 
 def down_all():
