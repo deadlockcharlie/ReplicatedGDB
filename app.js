@@ -29,7 +29,7 @@ const {
   deleteEdgeSchema,
 } = require("./Schemas/Requests");
 
-const { executeCypherQuery } = require("./helpers/DatabaseDriver");
+const { executeCypherQuery } = require("./drivers/Neo4jDriver");
 
 var Y = require("yjs");
 var { WebsocketProvider } = require("y-websocket");

@@ -82,7 +82,7 @@ def generate_compose_file(i, config):
 
       {app_name}:
         build:
-          context: ../Middleware
+          context: ../
           dockerfile: ./Dockerfiles/GRACEDockerfile
         container_name: {grace_name}
         ports:

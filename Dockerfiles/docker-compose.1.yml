@@ -32,7 +32,7 @@ services:
 
   app1:
     build:
-      context: ../Middleware
+      context: ../
       dockerfile: ./Dockerfiles/GRACEDockerfile
     container_name: Grace1
     ports:
