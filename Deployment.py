@@ -8,26 +8,49 @@ def load_config(path="DistributionConfig.json"):
     with open(path, "r") as f:
         return json.load(f)
 
+from textwrap import dedent
+
 def generate_provider(config):
-    content = dedent(
-      f"""
-      services:
-        wsserver:
-          container_name: wsserver
-          build: 
-            context: ../
-            dockerfile: Dockerfiles/WSServerDockerfile
-          ports:
-            - "1234:1234"    
-          environment:
-             PORT: "1234"
-             HOST: "wsserver"
-                     """)
-    filename = f"docker-compose.provider.yml"
-    with open('./Dockerfiles/'+filename, "w") as f:
-        f.write(content.strip())
-    print(f"Generated {'./Dockerfiles/'+filename}")
-    return './Dockerfiles/'+filename
+    port = config["provider_port"]
+    numReplicas = config["n"]
+
+    networks = "\n".join(
+        f"  Grace_net_{i+1}:\n    external: true"
+        for i in range(numReplicas)
+    )
+
+    service_networks = "".join(
+        f"              - Grace_net_{i+1}\n"
+        for i in range(numReplicas)
+    )
+
+    content = dedent(f"""
+        services:
+          wsserver:
+            container_name: wsserver
+            build: 
+              context: ../
+              dockerfile: Dockerfiles/WSServerDockerfile
+            ports:
+              - "{port}:1234"
+            environment:
+              PORT: "{port}"
+              HOST: "wsserver"
+            networks:
+{service_networks.rstrip()}
+
+networks:
+{networks}
+    """)
+
+    filename = "docker-compose.provider.yml"
+    filepath = f"./Dockerfiles/{filename}"
+    with open(filepath, "w") as f:
+        f.write(content.strip() + "\n")
+    print(f"Generated {filepath}")
+    return filepath
+
+
     
 def generate_compose_file(i, config):
     http_port = config["base_http_port"] + i
@@ -141,6 +164,7 @@ def generate_compose_file(i, config):
 
     networks:
       {network_name}:
+        external: true
     """)
 
     filename = f"docker-compose.{i+1}.yml"
@@ -160,12 +184,16 @@ def generate_all():
     return files
 
 def up_all():
-    files = generate_all()
-    for file in files:
-        print(f"Starting containers from {file}...")
-        subprocess.run(["sudo", "docker", "compose", "-f", file, "up", "-d", "--force-recreate"], check=True)
-    #if(config["provider"]):
-    #    subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml', "up", "-d", "--force-recreate"], check=True)
+    config = load_config()
+    num_replicas = config["n"]
+    generate_all()
+    for i in range(num_replicas):
+        print(f"Starting network for Replica: {i+1}")
+        subprocess.run(["docker","network", "create", f"Grace_net_{i+1}"])
+        print(f"Starting containers from Replica {i+1}")
+        subprocess.run(["docker", "compose", "-f", f"./Dockerfiles/docker-compose.{i+1}.yml", "up", "-d", "--force-recreate"], check=True)
+    if(config["provider"]):
+        subprocess.run(["docker", "compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up", "-d", "--force-recreate"], check=True)
     
 
 def down_all():
@@ -178,7 +206,7 @@ def down_all():
         print(f"Removing network {network}...")
         subprocess.run(["docker", "network", "rm", network], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if (config["provider"]):
-        subprocess.run(["docker", "compose", "-f", './Dockerfiles/docker-compose.provider.yaml' , "down"], check=True)
+        subprocess.run(["docker", "compose", "-f", './Dockerfiles/docker-compose.provider.yml' , "down"], check=True)
     
 
 def main():
