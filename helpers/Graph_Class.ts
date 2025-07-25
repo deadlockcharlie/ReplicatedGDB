@@ -53,7 +53,7 @@ export class Vertex_Edge {
     properties: { [key: string]: any },
     remote: boolean
   ) {
-    logger.info(`Adding vertex with label ${label}, remote is : ${remote}`);
+    //logger.info(`Adding vertex with label ${label}, remote is : ${remote}`);
 
     // Ensure identifier exists or generate one if not remote
     //if (!properties.identifier) {
@@ -67,16 +67,14 @@ export class Vertex_Edge {
     //   throw new Error("Identifier is required");
     // } 
     // This check has been performed in the schema validation step in routers. 
-
     const existingVertex = this.GVertices.get(properties.identifier);
-
     // Prevent duplicate entries if not remote
     if (existingVertex && !remote) {
       throw new Error(
         `Vertex with identifier "${properties.identifier}" already exists`
       );
     }
-
+    
     // Build and execute Cypher query
     const query = `CREATE (n:${label} $properties) RETURN n`;
     const params = { label: label, properties: properties, };
@@ -88,7 +86,6 @@ export class Vertex_Edge {
 
     // Only update local structures if not a remote sync
     if (!remote) {
-      // console.log('CALLED!')
       const vertex: VertexInformation = {
         id: properties.identifier,
         label,
@@ -151,7 +148,7 @@ export class Vertex_Edge {
 
     console.log(properties, sourcePropValue);
     if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
-      throw new Error("verteces undefined");
+      throw new Error("Vertices do not exist");
     }
 
 
@@ -191,7 +188,7 @@ export class Vertex_Edge {
     };
 
     const result = await this.executeCypherQuery(query, params);
-    logger.error(JSON.stringify(result));
+    //logger.error(JSON.stringify(result));
     if (result.records.length === 0) {
       throw new Error("Failed to create edge");
     }

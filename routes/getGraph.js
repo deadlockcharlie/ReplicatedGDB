@@ -1,4 +1,5 @@
 var express = require('express');
+const {executeCypherQuery} = require("../app")
 var router = express.Router();
 // Configure Gremlin client
 

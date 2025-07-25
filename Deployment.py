@@ -223,6 +223,9 @@ def main():
         up_all()
     elif command == "down":
         down_all()
+    elif command == "rebuild":
+        down_all()
+        up_all()
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
