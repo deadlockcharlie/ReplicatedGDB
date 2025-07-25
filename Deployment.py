@@ -8,6 +8,27 @@ def load_config(path="DistributionConfig.json"):
     with open(path, "r") as f:
         return json.load(f)
 
+def generate_provider(config):
+    content = dedent(
+      f"""
+      services:
+        wsserver:
+          container_name: wsserver
+          build: 
+            context: ../
+            dockerfile: Dockerfiles/WSServerDockerfile
+          ports:
+            - "1234:1234"    
+          environment:
+             PORT: "1234"
+             HOST: "wsserver"
+                     """)
+    filename = f"docker-compose.provider.yml"
+    with open('./Dockerfiles/'+filename, "w") as f:
+        f.write(content.strip())
+    print(f"Generated {'./Dockerfiles/'+filename}")
+    return './Dockerfiles/'+filename
+    
 def generate_compose_file(i, config):
     http_port = config["base_http_port"] + i
     bolt_port = config["base_bolt_port"] + i
@@ -82,8 +103,8 @@ def generate_compose_file(i, config):
 
       {app_name}:
         build:
-          context: ../Middleware
-          dockerfile: ./Dockerfiles/GRACEDockerfile
+          context: ../
+          dockerfile: Dockerfiles/GRACEDockerfile
         container_name: {grace_name}
         ports:
           - "{app_port}:3000"
@@ -133,16 +154,18 @@ def generate_all():
     files = []
     for i in range(config["n"]):
         files.append(generate_compose_file(i, config))
+    if(config["provider"]):
+        provider = generate_provider(config)
+        files.append(provider)
     return files
 
 def up_all():
-    config = load_config()
     files = generate_all()
     for file in files:
         print(f"Starting containers from {file}...")
-        subprocess.run(["docker-compose", "-f", file, "up", "-d"], check=True)
-    if(config["provider"]):
-        subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml', "up", "-d"], check=True)
+        subprocess.run(["sudo", "docker", "compose", "-f", file, "up", "-d", "--force-recreate"], check=True)
+    #if(config["provider"]):
+    #    subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml', "up", "-d", "--force-recreate"], check=True)
     
 
 def down_all():
@@ -151,11 +174,11 @@ def down_all():
         file = f"docker-compose.{i+1}.yml"
         network = f"grace_net_{i+1}"
         print(f"Stopping containers from {'./Dockerfiles/'+file}...")
-        subprocess.run(["docker-compose", "-f", './Dockerfiles/'+file , "down"], check=True)
+        subprocess.run(["docker", "compose", "-f", './Dockerfiles/'+file , "down"], check=True)
         print(f"Removing network {network}...")
         subprocess.run(["docker", "network", "rm", network], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if (config["provider"]):
-        subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml' , "down"], check=True)
+        subprocess.run(["docker", "compose", "-f", './Dockerfiles/docker-compose.provider.yaml' , "down"], check=True)
     
 
 def main():

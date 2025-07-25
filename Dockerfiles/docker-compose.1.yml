@@ -32,8 +32,8 @@ services:
 
   app1:
     build:
-      context: ../Middleware
-      dockerfile: ./Dockerfiles/GRACEDockerfile
+      context: ../
+      dockerfile: Dockerfiles/GRACEDockerfile
     container_name: Grace1
     ports:
       - "3000:3000"

@@ -41,8 +41,6 @@ const {Graph} = require('./helpers/GraphManager')
 ydoc = new Y.Doc();
 const GraphManager = new Graph();
 const graph = new Vertex_Edge(ydoc, executeCypherQuery, GraphManager);
-const GraphManager = new Graph();
-const graph = new Vertex_Edge(ydoc, executeCypherQuery, GraphManager);
 vertexCount = 0;
 
 const wsProvider = new WebsocketProvider(
