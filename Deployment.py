@@ -9,52 +9,35 @@ def load_config(path="DistributionConfig.json"):
     with open(path, "r") as f:
         return json.load(f)
 
-# <<<<<<< changing_to_V_E_G
+def generate_provider(config):
+    port = config["provider_port"]
 
-# def generate_provider(config):
-#     port = config["provider_port"]
-#     numReplicas = config["n"]
+    content = dedent(f"""
+        name: Provider
+        services:
+          wsserver:
+            container_name: wsserver
+            build: 
+              context: ../
+              dockerfile: ./Dockerfiles/WSServerDockerfile
+            ports:
+              - "{port}:1234"
+            environment:
+              PORT: "{port}"
+              HOST: "wsserver"
+            networks:
+              - Provider_net
+        networks:
+          Provider_net:
+    """)
 
-# #     networks = "\n".join(
-# #         f"  Grace_net_{i+1}:\n    external: true"
-# #         for i in range(numReplicas)
-# #     )
+    filename = "docker-compose.provider.yml"
+    filepath = f"./Dockerfiles/{filename}"
+    with open(filepath, "w") as f:
+        f.write(content.strip() + "\n")
+    print(f"Generated {filepath}")
+    return filepath
 
-# #     service_networks = "".join(
-# #         f"              - Grace_net_{i+1}\n"
-# #         for i in range(numReplicas)
-# #     )
-
-#     content = dedent(f"""
-#         services:
-#           wsserver:
-#             container_name: wsserver
-#             build: 
-#               context: ../
-#               dockerfile: Dockerfiles/WSServerDockerfile
-#             ports:
-#               - "{port}:1234"
-#             environment:
-#               PORT: "{port}"
-#               HOST: "wsserver"
-#             networks:
-# {service_networks.rstrip()}
-
-# networks:
-# {networks}
-#     """)
-
-#     filename = "docker-compose.provider.yml"
-#     filepath = f"./Dockerfiles/{filename}"
-#     with open(filepath, "w") as f:
-#         f.write(content.strip() + "\n")
-#     print(f"Generated {filepath}")
-#     return filepath
-
-
-    
-# =======
-# >>>>>>> main
 def generate_compose_file(i, config):
     http_port = config["base_http_port"] + i
     bolt_port = config["base_bolt_port"] + i
@@ -182,10 +165,9 @@ def generate_all():
     files = []
     for i in range(config["n"]):
         files.append(generate_compose_file(i, config))
-# <<<<<<< changing_to_V_E_G
-#     if(config["provider"]):
-#         provider = generate_provider(config)
-#         files.append(provider)
+    if(config["provider"]):
+        provider = generate_provider(config)
+        files.append(provider)
     return files
 
 def up_all():
