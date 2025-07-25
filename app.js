@@ -29,14 +29,19 @@ const {
   deleteEdgeSchema,
 } = require("./Schemas/Requests");
 
-const { executeCypherQuery } = require("./drivers/Neo4jDriver");
+const { executeCypherQuery } = require("./helpers/DatabaseDriver");
 
 var Y = require("yjs");
-var { WebsocketProvider } = require("y-websocket");
-const { Graph } = require("./helpers/Graph_Class");
+var {WebsocketProvider} = require("y-websocket");
+const { Vertex_Edge } = require('./helpers/Graph_Class');
+const {Graph} = require('./helpers/GraphManager')
+
+
+
 
 ydoc = new Y.Doc();
-const graph = new Graph(ydoc, executeCypherQuery);
+const GraphManager = new Graph();
+const graph = new Vertex_Edge(ydoc, executeCypherQuery, GraphManager);
 vertexCount = 0;
 
 const wsProvider = new WebsocketProvider(
@@ -225,5 +230,5 @@ function normalizePort(val) {
   return false;
 }
 
+module.exports = { logger, executeCypherQuery, app };
 
-module.exports = { app, executeCypherQuery, logger };

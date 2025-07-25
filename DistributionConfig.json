@@ -1,5 +1,5 @@
 {
-  "n": 0,
+  "n": 2,
   "database":"memgraph",
   "base_http_port": 7474,
   "base_bolt_port": 7687,
@@ -7,5 +7,6 @@
   "base_prometheus_port": 9090,
   "base_grafana_port": 5000,
   "password": "verysecretpassword",
+  "provider_port": 1234,
   "provider": true
 }

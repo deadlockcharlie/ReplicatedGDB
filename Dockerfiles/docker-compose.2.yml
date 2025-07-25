@@ -1,8 +1,7 @@
-
 services:
-  memgraph1:
+  memgraph2:
     image: memgraph/memgraph:latest
-    container_name: memgraph1
+    container_name: memgraph2
     command: ["--log-level=TRACE"]
     pull_policy: always
     healthcheck:
@@ -12,63 +11,63 @@ services:
       retries: 3
       start_period: 0s
     ports:
-      - "7687:7687"
+      - "7688:7687"
     networks:
-      - Grace_net_1
-  lab1:
+      - Grace_net_2
+  lab2:
     image: memgraph/lab
     pull_policy: always
-
     depends_on:
-      memgraph1:
+      memgraph2:
         condition: service_healthy
     ports:
-      - "7474:3000"
+      - "7475:3000"
     environment:
-      QUICK_CONNECT_MG_HOST: memgraph1
+      QUICK_CONNECT_MG_HOST: memgraph2
       QUICK_CONNECT_MG_PORT: 7687
     networks:
-      - Grace_net_1
+      - Grace_net_2
 
 
 
-  app1:
+  app2:
     build:
       context: ../
-
-    container_name: Grace1
+      dockerfile: Dockerfiles/GRACEDockerfile
+    container_name: Grace2
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       WS_URI: "ws://wsserver:1234"
-      NEO4J_URI: "bolt://memgraph1:7687"
+      NEO4J_URI: "bolt://memgraph2:7687"
       NEO4J_USER: "neo4j"
       NEO4J_PASSWORD: "verysecretpassword"
     depends_on:
-      memgraph1:
+      memgraph2:
         condition: service_healthy
     networks:
-      - Grace_net_1
+      - Grace_net_2
 
   prometheus:
     image: prom/prometheus
-    container_name: Prometheus1
+    container_name: Prometheus2
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
     ports:
-      - "9090:9090"
+      - "9091:9090"
     networks:
-      - Grace_net_1
+      - Grace_net_2
 
   grafana:
     image: grafana/grafana
-    container_name: Grafana1
+    container_name: Grafana2
     ports:
-      - "5000:3000"
+      - "5001:3000"
     depends_on:
       - prometheus
     networks:
-      - Grace_net_1
+      - Grace_net_2
 
 networks:
-
+  Grace_net_2:
+    external: true

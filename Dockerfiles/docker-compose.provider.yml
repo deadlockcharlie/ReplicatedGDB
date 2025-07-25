@@ -1,0 +1,20 @@
+services:
+          wsserver:
+            container_name: wsserver
+            build: 
+              context: ../
+              dockerfile: Dockerfiles/WSServerDockerfile
+            ports:
+              - "1234:1234"
+            environment:
+              PORT: "1234"
+              HOST: "wsserver"
+            networks:
+              - Grace_net_1
+              - Grace_net_2
+
+networks:
+  Grace_net_1:
+    external: true
+  Grace_net_2:
+    external: true
