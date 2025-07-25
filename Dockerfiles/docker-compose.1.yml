@@ -1,3 +1,4 @@
+
 services:
   memgraph1:
     image: memgraph/memgraph:latest
@@ -17,6 +18,7 @@ services:
   lab1:
     image: memgraph/lab
     pull_policy: always
+
     depends_on:
       memgraph1:
         condition: service_healthy
@@ -33,7 +35,7 @@ services:
   app1:
     build:
       context: ../
-      dockerfile: Dockerfiles/GRACEDockerfile
+
     container_name: Grace1
     ports:
       - "3000:3000"
@@ -69,5 +71,4 @@ services:
       - Grace_net_1
 
 networks:
-  Grace_net_1:
-    external: true
+

@@ -5,7 +5,7 @@
 import * as Y from 'yjs';
 import { v4 as uuidv4 } from 'uuid';
 import { BackupProgressInfo } from 'node:sqlite';
-import {logger} from "../app";
+import {logger} from "./Logging";
 
 export type EdgeInformation = {
   id: string,
@@ -53,7 +53,6 @@ export class Vertex_Edge {
     properties: { [key: string]: any },
     remote: boolean
   ) {
-    //logger.info(`Adding vertex with label ${label}, remote is : ${remote}`);
 
     // Ensure identifier exists or generate one if not remote
     //if (!properties.identifier) {
@@ -67,6 +66,7 @@ export class Vertex_Edge {
     //   throw new Error("Identifier is required");
     // } 
     // This check has been performed in the schema validation step in routers. 
+
     const existingVertex = this.GVertices.get(properties.identifier);
     // Prevent duplicate entries if not remote
     if (existingVertex && !remote) {
@@ -86,6 +86,7 @@ export class Vertex_Edge {
 
     // Only update local structures if not a remote sync
     if (!remote) {
+
       const vertex: VertexInformation = {
         id: properties.identifier,
         label,
@@ -107,9 +108,6 @@ export class Vertex_Edge {
     console.log(properties);
     const identifier = properties.identifier;
 
-    // if (!identifier) {
-    //   throw new Error("Identifier is required");
-    // }
     // if (!identifier) {
     //   throw new Error("Identifier is required");
     // }
@@ -146,10 +144,16 @@ export class Vertex_Edge {
     remote: boolean
   ) {
 
-    console.log(properties, sourcePropValue);
-    if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
-      throw new Error("Vertices do not exist");
-    }
+// <<<<<<< changing_to_V_E_G
+//     console.log(properties, sourcePropValue);
+//     if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
+//       throw new Error("Vertices do not exist");
+// =======
+//     // console.log(properties, sourcePropValue);
+//     if (this.GVertices.get(sourcePropValue) == undefined) {
+//       throw new Error("Source vertex undefined");
+// >>>>>>> main
+//     }
 
 
     // //check for id
@@ -188,7 +192,8 @@ export class Vertex_Edge {
     };
 
     const result = await this.executeCypherQuery(query, params);
-    //logger.error(JSON.stringify(result));
+
+//     logger.error(JSON.stringify(result));
     if (result.records.length === 0) {
       throw new Error("Failed to create edge");
     }

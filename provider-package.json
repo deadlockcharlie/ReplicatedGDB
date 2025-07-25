@@ -1,0 +1,12 @@
+{
+  "name": "YProvider",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@y/websocket-server": "^0.1.1",
+    "y-leveldb": "^0.2.0",
+    "yjs": "^13.6.27",
+    "y-websocket": "^3.0.0"
+    
+  }
+}

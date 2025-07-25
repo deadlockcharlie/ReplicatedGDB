@@ -39,9 +39,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Vertex_Edge = void 0;
-var Vertex_Edge = /** @class */ (function () {
-    function Vertex_Edge(ydoc, executeCypherQuery, listener) {
+
         this.ydoc = ydoc;
         this.GVertices = ydoc.getMap('GVertices');
         this.GEdges = ydoc.getMap('GEdges');
@@ -116,10 +114,7 @@ var Vertex_Edge = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log(properties, sourcePropValue);
-                        if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
-                            throw new Error("Vertices do not exist");
-                        }
+    }
                         edgeId = properties.identifier;
                         existingEdge = this.GEdges.get(edgeId);
                         //Dont allow duplicates if we are not remote
@@ -139,8 +134,7 @@ var Vertex_Edge = /** @class */ (function () {
                         };
                         return [4 /*yield*/, this.executeCypherQuery(query, params)];
                     case 1:
-                        result = _a.sent();
-                        //logger.error(JSON.stringify(result));
+
                         if (result.records.length === 0) {
                             throw new Error("Failed to create edge");
                         }

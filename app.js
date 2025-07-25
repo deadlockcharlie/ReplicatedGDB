@@ -38,6 +38,7 @@ const {Graph} = require('./helpers/GraphManager')
 
 
 
+
 ydoc = new Y.Doc();
 const GraphManager = new Graph();
 const graph = new Vertex_Edge(ydoc, executeCypherQuery, GraphManager);
@@ -230,3 +231,4 @@ function normalizePort(val) {
 }
 
 module.exports = { logger, executeCypherQuery, app };
+
