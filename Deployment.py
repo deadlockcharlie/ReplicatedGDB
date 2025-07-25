@@ -125,7 +125,7 @@ def generate_compose_file(i, config):
           """)
 
     content = dedent(f"""
-    name: grace{i+1}
+    name: GraceReplica{i+1}
     services:
       {databaseService}
 
@@ -186,32 +186,17 @@ def generate_all():
 #     if(config["provider"]):
 #         provider = generate_provider(config)
 #         files.append(provider)
-# =======
-# >>>>>>> main
     return files
 
 def up_all():
     config = load_config()
-# <<<<<<< changing_to_V_E_G
-#     num_replicas = config["n"]
-#     generate_all()
-#     for i in range(num_replicas):
-#         print(f"Starting network for Replica: {i+1}")
-#         subprocess.run(["docker","network", "create", f"Grace_net_{i+1}"])
-#         print(f"Building app for Replica {i+1}")
-#         subprocess.run(["docker","compose", "-f", f"./Dockerfiles/docker-compose.{i+1}.yml", "build", f"app{i+1}"])
-#         print(f"Starting containers from Replica {i+1}")
-#         subprocess.run(["docker", "compose", "-f", f"./Dockerfiles/docker-compose.{i+1}.yml", "up", "-d", "--force-recreate"], check=True)
-#     if(config["provider"]):
-#         subprocess.run(["docker", "compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up", "-d", "--force-recreate"], check=True)
-# =======
     files = generate_all()
     for file in files:
         print(f"Starting containers from {file}...")
-        subprocess.run(["docker-compose", "-f", file, "up","--build", "-d", "--force-recreate"], check=True)
+        subprocess.run(["docker","compose", "-f", file, "up","--build", "-d", "--force-recreate"], check=True)
     if(config["provider"]):
-        subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml', "up","--build", "-d", "--force-recreate"], check=True)
-# >>>>>>> main
+        subprocess.run(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up","--build", "-d", "--force-recreate"], check=True)
+
     
 
 def down_all():
@@ -220,19 +205,13 @@ def down_all():
         file = f"docker-compose.{i+1}.yml"
         network = f"grace_net_{i+1}"
         print(f"Stopping containers from {'./Dockerfiles/'+file}...")
-# <<<<<<< changing_to_V_E_G
-#         subprocess.run(["docker", "compose", "-f", './Dockerfiles/'+file , "down"], check=True)
-#         print(f"Removing network {network}...")
-#         subprocess.run(["docker", "network", "rm", network], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-#     if (config["provider"]):
-#         subprocess.run(["docker", "compose", "-f", './Dockerfiles/docker-compose.provider.yml' , "down"], check=True)
-# =======
-        subprocess.run(["docker-compose", "-f", './Dockerfiles/'+file , "down"], check=True)
+
+        subprocess.run(["docker","compose", "-f", './Dockerfiles/'+file , "down"], check=True)
         print(f"Removing network {network}...")
         subprocess.run(["docker", "network", "rm", network], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if (config["provider"]):
-        subprocess.run(["docker-compose", "-f", './Dockerfiles/docker-compose.provider.yaml' , "down"], check=True)
-# >>>>>>> main
+        subprocess.run(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml' , "down"], check=True)
+
     
 
 def main():
