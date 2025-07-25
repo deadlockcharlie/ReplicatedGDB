@@ -190,6 +190,8 @@ def up_all():
     for i in range(num_replicas):
         print(f"Starting network for Replica: {i+1}")
         subprocess.run(["docker","network", "create", f"Grace_net_{i+1}"])
+        print(f"Building app for Replica {i+1}")
+        subprocess.run(["docker","compose", "-f", f"./Dockerfiles/docker-compose.{i+1}.yml", "build", f"app{i+1}"])
         print(f"Starting containers from Replica {i+1}")
         subprocess.run(["docker", "compose", "-f", f"./Dockerfiles/docker-compose.{i+1}.yml", "up", "-d", "--force-recreate"], check=True)
     if(config["provider"]):
