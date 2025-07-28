@@ -1,9 +1,0 @@
-{
-  "n": 2,
-  "base_http_port": 7474,
-  "base_bolt_port": 7687,
-  "base_app_port": 3000,
-  "base_grafana_port": 3001,
-  "password": "verysecretpassword",
-  "start_provider": false
-}

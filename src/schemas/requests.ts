@@ -1,4 +1,4 @@
-var VertexSchema = {
+export const VertexSchema = {
   label: {
     notEmpty: true,
   },
@@ -7,7 +7,8 @@ var VertexSchema = {
   },
 };
 
-var EdgeSchema = {
+
+export const EdgeSchema = {
   sourceLabel: { notEmpty: true },
   sourcePropName: { notEmpty: true },
   sourcePropValue: { notEmpty: true },
@@ -20,7 +21,7 @@ var EdgeSchema = {
   },
 };
 
-var deleteVertexSchema = {
+export const deleteVertexSchema = {
   label: {
     notEmpty: true,
   },
@@ -29,11 +30,9 @@ var deleteVertexSchema = {
   },
 };
 
-var deleteEdgeSchema = {
+export const deleteEdgeSchema = {
     relationType: { notEmpty: true },
   "properties.identifier": {
     notEmpty: true,
   },
 }
-
-module.exports = { VertexSchema, EdgeSchema, deleteVertexSchema, deleteEdgeSchema };

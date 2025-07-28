@@ -1,4 +1,5 @@
 import sys
+import string
 import subprocess
 import json
 import os
@@ -124,6 +125,7 @@ def generate_compose_file(i, config):
           NEO4J_URI: "bolt://{db_name}:7687"
           NEO4J_USER: "neo4j"
           NEO4J_PASSWORD: "{password}"
+          DATABASE: {database.upper()}
         depends_on:
           {db_name}:
             condition: service_healthy

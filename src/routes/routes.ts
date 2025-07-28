@@ -1,0 +1,105 @@
+import { logger } from "../helpers/logging";
+import { graph } from "../app";
+
+export async function addVertex(req, res) {
+  try {
+    const { label, properties } = req.body;
+    const result = await graph.addVertex(label, properties, false);
+    logger.info(
+      `Vertex added: ${JSON.stringify({
+        label: label,
+        properties: properties,
+      })}`
+    );
+    res.json({
+      label: label,
+      properties: properties,
+    });
+  } catch (err) {
+    logger.error(`Error adding vertex ${err}`);
+    res.status(500);
+    res.json(`Error adding vertex ${err}`);
+  }
+}
+
+export async function addEdge(req, res) {
+  try {
+    const {
+      relationType,
+      sourceLabel,
+      sourcePropName,
+      sourcePropValue,
+      targetLabel,
+      targetPropName,
+      targetPropValue,
+      properties,
+    } = req.body;
+
+    await graph.addEdge(
+      relationType,
+      sourceLabel,
+      sourcePropName,
+      sourcePropValue,
+      targetLabel,
+      targetPropName,
+      targetPropValue,
+      properties,
+      false
+    );
+
+    logger.info(`Edge Added ${JSON.stringify({
+      relationType: relationType,
+      sourceLabel: sourceLabel,
+      sourcePropName: sourcePropName,
+      sourcePropValue: sourcePropValue,
+      targetLabel: targetLabel,
+      targetPropName: targetPropName,
+      targetPropValue: targetPropValue,
+      properties: properties,
+    })}`)
+
+    res.json({
+      relationType: relationType,
+      sourceLabel: sourceLabel,
+      sourcePropName: sourcePropName,
+      sourcePropValue: sourcePropValue,
+      targetLabel: targetLabel,
+      targetPropName: targetPropName,
+      targetPropValue: targetPropValue,
+      properties: properties,
+    });
+  } catch (err) {
+    logger.error(`Error adding edge ${err}`);
+    res.status(500);
+    res.json(`Error adding edge ${err}`);
+  }
+}
+
+export async function deleteVertex(req, res) {
+  try {
+    const label = req.body.label; // you can pass label via query
+    const properties = req.body.properties;
+    await graph.removeVertex(label, properties, false);
+    logger.info(`Vertex deleted: ${JSON.stringify({label:label, properties:properties})}`);
+    res.json({label:label, properties:properties});
+  } catch (err) {
+    logger.error(`Error removing vertex ${err}`);
+    res.status(500);
+    res.json(`Error removing vertex ${err}`);
+  }
+}
+
+export async function deleteEdge(req, res) {
+  try {
+    const relationType = req.body.relationType;
+    const properties = req.body.properties;
+
+    await graph.removeEdge(relationType, properties, false);
+    logger.info(`Edge deleted: ${JSON.stringify({relationType:relationType, properties:properties})}`);
+    res.json({relationType:relationType, properties:properties});
+  } catch (err) {
+    logger.error(`Error deleting edge ${err}`);
+    res.status(500);
+    res.json(`Error deleting edge ${err}`);
+  }
+}

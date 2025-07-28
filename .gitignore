@@ -5,8 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 Logs/
-helpers/Graph_Class.js
-helpers/GraphManager.js
+dist/
 Dockerfiles/docker-compose.*.yml
 
 # Environment variables
