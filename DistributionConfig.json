@@ -1,12 +1,24 @@
 {
-  "n": 2,
-  "database":"memgraph",
-  "base_http_port": 7474,
-  "base_bolt_port": 7687,
+  "base_website_port": 7474,
+  "base_protocol_port": 7687,
   "base_app_port": 3000,
   "base_prometheus_port": 9090,
   "base_grafana_port": 5000,
-  "password": "verysecretpassword",
   "provider_port": 1234,
-  "provider": true
+  "provider": true,
+  "dbs" : [
+    {
+    "database": "memgraph", 
+    "connected_to_provider": true, 
+    "database_url": "bolt://memgraph:7687",
+    "user": "memgraph"
+    }, 
+    {
+    "database": "Neo4j", 
+    "connected_to_provider": false, 
+    "password": "verysecretpassword",
+    "database_url": "bolt://memgraph:7687",
+    "user": "neo4j"
+    }
+  ]
 }
