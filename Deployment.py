@@ -289,9 +289,9 @@ def force_clean():
     
   ########Uncomment to remove any unused containers, images and volumes 
    
-  #subprocess.run(["docker", "container", "prune", "-f"], check=False)
-  #subprocess.run(["docker", "image", "prune", "-f"], check=False)
-  #subprocess.run(["docker", "volume", "prune", "-f"], check=False)
+  subprocess.run(["docker", "container", "prune", "-f"], check=False)
+  subprocess.run(["docker", "image", "prune", "-f"], check=False)
+  subprocess.run(["docker", "volume", "prune", "-f"], check=False)
   
 def main():
     if len(sys.argv) < 2:
