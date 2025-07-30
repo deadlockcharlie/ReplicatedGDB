@@ -1,7 +1,7 @@
-const { createLogger, format, transports } = require('winston');
+import {createLogger, format, transports} from "winston";
 
-const logger = createLogger({
-  level: 'info',
+export const logger = createLogger({
+level: 'info',
   format: format.combine(
     format.timestamp(),
     format.printf(({ timestamp, level, message }) => `${timestamp} [${level.toUpperCase()}]: ${message}`)
@@ -11,5 +11,3 @@ const logger = createLogger({
     new transports.File({ filename: './Logs/Logs.log' }) // all updates are stored here
   ]
 });
-
-module.exports = {logger};

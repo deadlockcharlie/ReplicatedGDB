@@ -1,23 +1,23 @@
-import {EdgeInformation} from './Graph_Class';
+import {EdgeInformation} from './Graph';
 
 export class Graph{
-    private Graph: Map<string, Array<EdgeInformation>>;
+    public Graph: Map<string, Array<EdgeInformation>>;
 
     constructor(){
         this.Graph = new Map();
     }
 
-    private addVertex(id: string){
+    public addVertex(id: string){
         this.Graph.set(id, new Array<EdgeInformation>())
     }
-    private deleteVertex(id: string){
+    public deleteVertex(id: string){
         this.Graph.delete(id)
     }
-    private addEdge(id: string, edge:EdgeInformation){
+    public addEdge(id: string, edge:EdgeInformation){
         const edgeArr = this.Graph.get(id)
         edgeArr?.push(edge)
     }
-    private deleteEdge(id: string, edge:EdgeInformation){
+    public deleteEdge(id: string, edge:EdgeInformation){
         const edgeArr = this.Graph.get(id)
         const index = edgeArr?.findIndex(e => e.id == edge.id)
         if (typeof index === 'number' && index >= 0) {
