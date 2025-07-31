@@ -46,6 +46,7 @@ jspm_packages/
 coverage/
 .nyc_output/
 *.lcov
+tests/bin
 
 # Logs
 logs/
