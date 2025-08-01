@@ -9,7 +9,7 @@ export class Neo4jDriver extends DatabaseDriver {
 
     logger.info("Connecting on Bolt port:", process.env.NEO4J_URI);
     this.driver = neo4j.driver(
-      process.env.NEO4J_URI,
+      process.env.DATABASE_URI,
       neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
     );
     (async () => {
