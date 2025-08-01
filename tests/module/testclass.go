@@ -9,6 +9,8 @@ import (
  	"net/http"
 	"encoding/json"
 	"fmt"
+	"context"
+    "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 type TestClass struct {
@@ -33,12 +35,45 @@ func (p *TestClass) Startup_containers(){
 	}
 }
 
-func (p *TestClass) Neo4j_query(){
-}
+func (p *TestClass) Cypher_query(DB_URL string, DB_USER string, DB_Password string, cypherQuery string, params map[string]any){
 
-func (p *TestClass) Memgraph_query(){
-}
+	ctx := context.Background()
+    driver, err := neo4j.NewDriverWithContext(
+        DB_URL,
+        neo4j.BasicAuth(DB_USER, DB_Password, ""))
+	if err != nil {
+		log.Fatal(err)
+	}
+    defer driver.Close(ctx)
 
+    err = driver.VerifyConnectivity(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("Connection established.")
+
+
+	result, err := neo4j.ExecuteQuery(ctx, driver, cypherQuery,
+	params, neo4j.EagerResultTransformer,
+    neo4j.ExecuteQueryWithDatabase("neo4j"))
+	if err != nil {
+	   log.Fatal(err)
+	}
+
+	// Loop through results and do something with them
+	for _, record := range result.Records {
+	    name, _ := record.Get("name")  // .Get() 2nd return is whether key is present
+	    fmt.Println(name)
+	    // or
+	    // fmt.Println(record.AsMap())  // get Record as a map
+	}
+
+	// Summary information
+	fmt.Printf("The query `%v` returned %v records in %+v.\n",
+	    result.Summary.Query().Text(), len(result.Records),
+	    result.Summary.ResultAvailableAfter())
+}
+//from go implementation both neo4j and memgraph use the neo4j driver so we can just use this function for both
 func (p *TestClass) Api_post_request(REPLICA_URL string, api_request string, request_body map[string]any){
 	// Marshal the request body to JSON
 	jsonData, err := json.Marshal(request_body)
@@ -76,5 +111,3 @@ func (p *TestClass) Start_Provider(){
 		log.Fatal(err)
 	}
 }
-
-	
