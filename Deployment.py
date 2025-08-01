@@ -78,7 +78,7 @@ def generate_compose_file(i, db_conf, config):
     if database == "Neo4j":
         password = db_conf["password"]
     connected_to_provider = db_conf["connected_to_provider"]
-    db_url = db_conf["database_url"]
+    # db_url = db_conf["database_url"]
     db_user = db_conf["user"]
 
     db_name = f"{database}{i+1}"
@@ -90,6 +90,7 @@ def generate_compose_file(i, db_conf, config):
 
 
     if database == "Neo4j":
+        db_url = f"bolt://{db_name}:7687"
         databaseService = dedent(f"""
         {db_name}:
           image: neo4j:latest
@@ -99,6 +100,7 @@ def generate_compose_file(i, db_conf, config):
             - "{protocol_port}:7687"
           environment:
             NEO4J_AUTH: neo4j/{password}
+            NEO4J_server_config_strict__validation_enabled: false
           healthcheck:
             test: [ "CMD", "bash", "-c", "cypher-shell -u neo4j -p {password} 'RETURN 1'" ]
             interval: 10s
@@ -108,6 +110,7 @@ def generate_compose_file(i, db_conf, config):
             - {network_name}
         """).strip("\n")
     elif database == "memgraph":  # memgraph
+        db_url = f"bolt://{db_name}:7687"
         databaseService = dedent(f"""
         {db_name}:
           image: memgraph/memgraph:latest
@@ -143,6 +146,8 @@ def generate_compose_file(i, db_conf, config):
     environment = dedent(f"""
     WS_URI: "ws://wsserver:1234"
     DATABASE_URI: {db_url}
+    NEO4J_USER: "neo4j"
+    NEO4J_PASSWORD: "{password}"
     USER: {db_user}
     DATABASE: {database.upper()}
     """).strip("\n")

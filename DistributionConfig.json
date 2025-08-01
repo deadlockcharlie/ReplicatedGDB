@@ -5,19 +5,12 @@
   "base_prometheus_port": 9090,
   "base_grafana_port": 5000,
   "provider_port": 1234,
-  "provider": true,
+  "provider": false,
   "dbs" : [
-    {
-    "database": "memgraph", 
-    "connected_to_provider": true, 
-    "database_url": "bolt://memgraph:7687",
-    "user": "memgraph"
-    }, 
     {
     "database": "Neo4j", 
     "connected_to_provider": false, 
     "password": "verysecretpassword",
-    "database_url": "bolt://memgraph:7687",
     "user": "neo4j"
     }
   ]
