@@ -4,12 +4,17 @@ import subprocess
 import json
 import os
 import re
+import argparse
 from textwrap import dedent, indent
 
 
-def load_config(path="DistributionConfig.json"):
-    with open(path, "r") as f:
-        return json.load(f)
+def load_config(args):
+  if args.config_json:
+      return json.loads(args.config_json)
+  if args.config_json: path = args.config_json
+  else:  path = "DistributionConfig.json"
+  with open(path, "r") as f:
+      return json.load(f)
       
 def network_create(external_network_instances):
   for n in external_network_instances:
@@ -204,8 +209,7 @@ def generate_compose_file(i, db_conf, config):
     print(f"Generated {filename}")
     return filename
   
-def generate_all():
-    config = load_config()
+def generate_all(config):
     files = []
     n = len(config['dbs'])
     external_network_instances = []    
@@ -218,9 +222,8 @@ def generate_all():
         files.append(provider)
     return files
 
-def up_all():
-    config = load_config()
-    files = generate_all()
+def up_all(config):
+    files = generate_all(config)
     for file in files:
         print(f"Starting containers from {file}...")
         subprocess.run(["docker","compose", "-f", file, "up","--build", "-d", "--force-recreate"], check=True)
@@ -229,8 +232,7 @@ def up_all():
 
     
 
-def down_all():
-    config = load_config()
+def down_all(config):
     for i in range(len(config["dbs"])):
         file = f"docker-compose.{i+1}.yml"
         network = f"Grace_net_{i+1}"
@@ -242,9 +244,7 @@ def down_all():
     if (config["provider"]):
         subprocess.run(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml' , "down"], check=True)
         
-def force_clean():
-  config = load_config()
-  
+def force_clean(config):  
   files = [f'./Dockerfiles/docker-compose.{i+1}.yml' for i in range(len(config['dbs']))]
   if config.get('provider'):
     files.append('./Dockerfiles/docker-compose.provider.yml')
@@ -291,27 +291,39 @@ def force_clean():
    
   subprocess.run(["docker", "container", "prune", "-f"], check=False)
   subprocess.run(["docker", "image", "prune", "-f"], check=False)
-  subprocess.run(["docker", "volume", "prune", "-f"], check=False)
+  #subprocess.run(["docker", "volume", "prune", "-f"], check=False)
   
-def main():
+def parse_args(argv=None):
+    p = argparse.ArgumentParser(description="Manage deployments")
+    p.add_argument("command", choices=["generate","up","down","force-clean","rebuild"])
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("-c","--config-file", help="Path to JSON config")
+    g.add_argument("-j","--config-json", help="Inline JSON string for config")
+    return p.parse_args(argv)
+
+  
+def main(argv=None):
+    args = parse_args(argv)
+    config = load_config(args)
+  
     if len(sys.argv) < 2:
         print("Usage: python manage.py [generate|up|down|force-clean|rebuild]")
         sys.exit(1)
 
-    command = sys.argv[1]
-    if command == "generate":
-        generate_all()
-    elif command == "up":
-        up_all()
-    elif command == "down":
-        down_all()
-    elif command == "force-clean":    
-        force_clean()
-    elif command == "rebuild":
-        down_all()
-        up_all()
+    args.command = sys.argv[1]
+    if args.command == "generate":
+        generate_all(config)
+    elif args.command == "up":
+        up_all(config)
+    elif args.command == "down":
+        down_all(config)
+    elif args.command == "force-clean":    
+        force_clean(config)
+    elif args.command == "rebuild":
+        down_all(config)
+        up_all(config)
     else:
-        print(f"Unknown command: {command}")
+        print(f"Unknown command: {args.command}")
         sys.exit(1)
 
 if __name__ == "__main__":
