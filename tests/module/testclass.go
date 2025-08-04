@@ -24,10 +24,10 @@ func (p *TestClass) Startup_containers(){
 		log.Fatalf("failed to encode CONFIG as JSON: %v", err)
 	}
 
-	fmt.Print("Reading from provided json config")
+	fmt.Print("Reading from provided json config\n")
 
-	cmd := exec.Command("sudo", "python3", "Deployment.py", "up", "--config-json", string(configJSON))
-	cmd.Dir = ".."
+	cmd := exec.Command("sudo", "python3", "/home/dervishi/ReplicatedGDB/Deployment.py", "up", "--config-json", string(configJSON))
+	cmd.Dir = "../.."
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -110,4 +110,60 @@ func (p *TestClass) Start_Provider(){
 	if err := cmd.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (p *TestClass) Kill_Containers(){
+	cmd := exec.Command("sudo","python3",  "Deployment.py", "down")
+	cmd.Dir = ".."
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (p *TestClass) Concurrent_addVertex_addEdge() {
+	//This is for testing what happens when there are concurrent updates in one replica
+
+	p.Startup_containers()
+
+	REPLICA_2_URL := "http://localhost:3001"
+	vertex1 := map[string]any{
+ 		"label": "ProductItem",
+    	"properties":map[string]any{
+        	"identifier": "Product1",
+        	"name": "Laptop2",
+        	"price": 999.99,
+        	"inStock": true,
+    	},
+	}
+	p.Api_post_request(REPLICA_2_URL, "addVertex", vertex1)
+	fmt.Print("\n-----------------------Successfully added Vertex1----------------------------------\n")
+
+	fmt.Print("\n-----------------------SConcurrently adding Vertex2 and edge between them----------------------------------\n")
+	vertex2 := map[string]any{
+ 		"label": "ProductItem",
+    	"properties":map[string]any{
+        	"identifier": "Product2",
+        	"name": "Laptop2",
+        	"price": 999.99,
+        	"inStock": true,
+    	},
+	}
+
+	edge :=  map[string]any{
+		"sourceLabel": "ProductItem",
+    	"sourcePropName": "identifier",
+    	"sourcePropValue": "Product1",
+    	"targetLabel": "ProductItem",
+    	"targetPropName": "identifier",
+    	"targetPropValue": "Product2",
+    	"relationType": "SAME_CATEGORY",
+    	"properties": map[string]any{
+    	    "identifier":"ProductEdge2",
+    	    "relation":[]string{"recommendation"},
+    	    },
+	}
+	go p.Api_post_request(REPLICA_2_URL, "addVertex", vertex2)
+	p.Api_post_request(REPLICA_2_URL, "addEdge", edge)
 }
