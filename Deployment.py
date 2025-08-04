@@ -80,8 +80,8 @@ def generate_compose_file(i, db_conf, config):
     grafana_port = config["base_grafana_port"] + i
 
     database = db_conf["database"]
-    if database == "Neo4j":
-        password = db_conf["password"]
+    #if database == "Neo4j":
+    password = db_conf["password"]
     connected_to_provider = db_conf["connected_to_provider"]
     # db_url = db_conf["database_url"]
     db_user = db_conf["user"]

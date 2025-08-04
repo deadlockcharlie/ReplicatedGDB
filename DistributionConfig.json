@@ -12,6 +12,12 @@
     "connected_to_provider": false, 
     "password": "verysecretpassword",
     "user": "neo4j"
+    },{
+    "database": "memgraph", 
+    "connected_to_provider": false, 
+    "password": "verysecretpassword",
+    "user": "neo4j"
     }
+    
   ]
 }
