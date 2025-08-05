@@ -80,10 +80,8 @@ def generate_compose_file(i, db_conf, config):
     grafana_port = config["base_grafana_port"] + i
 
     database = db_conf["database"]
-    #if database == "Neo4j":
     password = db_conf["password"]
     connected_to_provider = db_conf["connected_to_provider"]
-    # db_url = db_conf["database_url"]
     db_user = db_conf["user"]
 
     db_name = f"{database}{i+1}"
@@ -94,7 +92,7 @@ def generate_compose_file(i, db_conf, config):
     network_name = f"Grace_net_{i+1}"
 
 
-    if database == "Neo4j":
+    if database == "neo4j":
         db_url = f"bolt://{db_name}:7687"
         databaseService = dedent(f"""
         {db_name}:
@@ -144,6 +142,22 @@ def generate_compose_file(i, db_conf, config):
           environment:
             QUICK_CONNECT_MG_HOST: {db_name}
             QUICK_CONNECT_MG_PORT: 7687
+          networks:
+            - {network_name}
+        """).strip("\n")
+    elif database == "janusgraph":  # janusgraph
+        db_url = f"ws://{db_name}:8182"
+        databaseService = dedent(f"""
+        {db_name}:
+          image: docker.io/janusgraph/janusgraph:latest
+          container_name: {db_name}
+          healthcheck:
+            test: ["CMD-SHELL", "bin/gremlin.sh", "-e", "scripts/remote-connect.groovy"]
+            interval: 25s
+            timeout: 20s
+            retries: 3
+          ports:
+            - "{protocol_port}:8182"
           networks:
             - {network_name}
         """).strip("\n")
@@ -204,7 +218,6 @@ def generate_compose_file(i, db_conf, config):
         "",
         "networks:",
         f"  {network_name}:",
-        f"    external: {connected_to_provider}",
     ]
 
     content = "\n".join(lines) + "\n"

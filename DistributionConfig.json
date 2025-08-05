@@ -8,7 +8,7 @@
   "provider": false,
   "dbs" : [
     {
-    "database": "Neo4j", 
+    "database": "janusgraph", 
     "connected_to_provider": false, 
     "password": "verysecretpassword",
     "user": "neo4j"

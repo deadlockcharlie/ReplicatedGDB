@@ -57,7 +57,7 @@ export class Vertex_Edge {
       );
     }
     // Update the database
-    driver.addVertex(label, properties);
+    await driver.addVertex(label, properties);
     // Only update local structures if not a remote sync
     if (!remote) {
       const vertex: VertexInformation = {
@@ -78,7 +78,7 @@ export class Vertex_Edge {
   ) {
     const identifier = properties.identifier;
     // update the database
-    driver.deleteVertex(label, identifier);
+    await driver.deleteVertex(label, identifier);
 
     const exists = this.GVertices.get(identifier);
 
@@ -115,7 +115,7 @@ export class Vertex_Edge {
     }
     
 
-    driver.addEdge(
+    await driver.addEdge(
       relationType,
       sourceLabel,
       sourcePropName,
@@ -163,7 +163,7 @@ export class Vertex_Edge {
     if (edge == undefined && !remote) {
       throw new Error("Edge with this identifier does not exist");
     } else {
-      driver.deleteEdge(relationType, properties, remote);
+      await driver.deleteEdge(relationType, properties, remote);
       if (!remote) {
         if (edge == undefined) {
           throw Error("Undefined Edge");
