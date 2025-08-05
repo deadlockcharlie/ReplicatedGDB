@@ -104,7 +104,7 @@ func (p *TestClass) Api_post_request(REPLICA_URL string, api_request string, req
 
 func (p *TestClass) Start_Provider(){
 	cmd := exec.Command("docker","compose", "-f", "./Dockerfiles/docker-compose.provider.yml", "up","--build", "-d", "--force-recreate")
-	cmd.Dir = ".."
+	cmd.Dir = "../.."
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -166,4 +166,37 @@ func (p *TestClass) Concurrent_addVertex_addEdge() {
 	}
 	go p.Api_post_request(REPLICA_2_URL, "addVertex", vertex2)
 	p.Api_post_request(REPLICA_2_URL, "addEdge", edge)
+}
+
+func (p *TestClass) Different_properties_merge(){
+	p.Startup_containers()
+	REPLICA_1_URL := "http://localhost:3000"
+	REPLICA_2_URL := "http://localhost:3001"
+	vertex_r1 := map[string]any{
+ 		"label": "ProductItem",
+    	"properties":map[string]any{
+        	"identifier": "Product1",
+        	"name": "Laptop2",
+        	"price": 999.99,
+        	"inStock": true,
+    	},
+	}
+	vertex_r2 := map[string]any{
+ 		"label": "ProductItem",
+    	"properties":map[string]any{
+        	"identifier": "Product1",
+        	"name": "Laptop2",
+        	"price": 100,
+        	"inStock": true,
+    	},
+	} 
+
+	//send the vertices to different replicas
+	p.Api_post_request(REPLICA_1_URL, "addVertex", vertex_r1)
+	fmt.Print("\n-----------------------Successfully added Vertex to replica 1----------------------------------\n")
+	p.Api_post_request(REPLICA_2_URL, "addVertex", vertex_r2)
+	fmt.Print("\n-----------------------Successfully added Vertex to replica 2----------------------------------\n")
+	//startup provider
+	fmt.Print("\n-----------------------Starting provider----------------------------------\n")
+	p.Start_Provider()
 }

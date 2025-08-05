@@ -14,7 +14,7 @@ func main() {
 		"base_prometheus_port": 9090,
 		"base_grafana_port":    5000,
 		"provider_port":        1234,
-		"provider":             true,
+		"provider":             false,
 		"dbs": []map[string]any{
 			{
 				"database":              "memgraph",
@@ -37,7 +37,8 @@ func main() {
 	}
 
 	//running the tests
-	tester.Concurrent_addVertex_addEdge();
+	//tester.Concurrent_addVertex_addEdge();
 	//tester.Kill_Containers()
+	tester.Different_properties_merge()
 }
 
