@@ -7,7 +7,7 @@ export class Neo4jDriver extends DatabaseDriver {
   constructor() {
     super();
 
-    logger.info("Connecting on Bolt port:", process.env.NEO4J_URI);
+    logger.info("Connecting to bolt on :", process.env.DATABASE_URI);
     this.driver = neo4j.driver(
       process.env.DATABASE_URI,
       neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)

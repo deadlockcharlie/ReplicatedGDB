@@ -28,7 +28,7 @@ register.registerMetric(httpRequests);
 
 import Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
-import WebSockerPolyfill from "ws";
+import WebSocketPolyfill from "ws";
 
 let ydoc = new Y.Doc();
 
@@ -36,11 +36,13 @@ new WebsocketProvider(
   process.env.WS_URI,
   "GraceSyncKey",
   ydoc,
-  WebSockerPolyfill
+  WebSocketPolyfill
 );
 
 // Setup Database
 import {Neo4jDriver} from "./drivers/neo4jDriver";
+import {GremlinDriver} from "./drivers/germlinDriver";
+
 // logger.info(`environment: ${JSON.stringify(process.env)}`);
 const dbname = process.env.DATABASE;
 logger.info(`Database specified ${dbname}`);
@@ -50,6 +52,9 @@ switch (dbname) {
     case "MEMGRAPH":
         driver = new Neo4jDriver();
     break;
+    case "JANUSGRAPH":
+      driver = new GremlinDriver();
+      break;
     default:
         logger.error("No database specified in configuration. Cannot initialize driver.");
         process.exit(1);
