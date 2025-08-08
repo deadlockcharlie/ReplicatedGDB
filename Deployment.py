@@ -42,7 +42,7 @@ def generate_provider(config, external_network_instances):
         f'      - "{port}:1234"',
         "    environment:",
         f'      PORT: "{port}"',
-        '      HOST: "wsserver"',
+        '      HOST: "0:0:0:0"',
         "    networks:",
         "      - Provider_net",
     ]
