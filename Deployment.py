@@ -37,7 +37,7 @@ def generate_provider(config, external_network_instances):
         f'      - "{port}:1234"',
         "    environment:",
         f'      PORT: "{port}"',
-        '      HOST: "wsserver"',
+        '      HOST: "0.0.0.0"',
         "    networks:",
         "      - Provider_net",
     ]
@@ -213,6 +213,7 @@ def generate_compose_file(i, db_conf, config):
         "",
         "networks:",
         f"  {network_name}:",
+        f"    external: {connected_to_provider}"
     ]
 
     content = "\n".join(lines) + "\n"
@@ -231,9 +232,8 @@ def generate_all():
     for i in range(n):
         files.append(generate_compose_file(i, config['dbs'][i], config))
         if config['dbs'][i]['connected_to_provider']: external_network_instances.append((f"Grace_net_{i+1}"))
-    if(config["provider"]):
-        provider = generate_provider(config, external_network_instances)
-        files.append(provider)
+        generate_provider(config, external_network_instances)
+        #files.append(provider)
     return files
 
 def up_all():
@@ -275,7 +275,7 @@ def force_clean():
     )
 
   patterns = [
-    r"^(Neo4j|memgraph)\d+$",
+    r"^(neo4j|memgraph)\d+$",
     r"^lab\d+$",
     r"^Grace\d+$",
     r"^Prometheus\d+$",
