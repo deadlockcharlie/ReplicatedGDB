@@ -91,7 +91,7 @@ def generate_compose_file(i, db_conf, config):
         db_url = f"bolt://{db_name}:7687"
         databaseService = dedent(f"""
         {db_name}:
-          image: neo4j:latest
+          image: neo4j:4.4.24
           container_name: {db_name}
           ports:
             - "{website_port}:7474"
@@ -108,7 +108,7 @@ def generate_compose_file(i, db_conf, config):
             - {network_name}
         """).strip("\n")
     elif database == "memgraph":  # memgraph
-        db_url = f"bolt://{db_name}:7687"
+        db_url = f"bolt://{db_name}:{protocol_port}"
         databaseService = dedent(f"""
         {db_name}:
           image: memgraph/memgraph:latest

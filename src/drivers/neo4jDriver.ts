@@ -22,78 +22,82 @@ export class Neo4jDriver extends DatabaseDriver {
     })();
   }
 
-  addVertex(label, properties) {
+  async addVertex(labels, properties) {
     logger.info("Adding vertex");
-    // Build and execute Cypher query
-    const query = `CREATE (n:${label} $properties) RETURN n`;
-    const params = { label: label, properties: properties };
+    const labelString = labels.join(":");
+     // Build and execute Cypher query
+    const query = `CREATE (n:${labelString} $properties) RETURN n`;
+    const params = {properties: properties };
     try {
-      this.driver.executeQuery(query, params);
+      await this.driver.executeQuery(query, params);
     } catch (err) {
       logger.error(err);
-      throw new (err);
+      throw err;
     }
   }
 
-  deleteVertex(label, identifier) {
-    const query = `MATCH (n:${label} {identifier: $identifier}) DETACH DELETE n`;
+  async deleteVertex(labels, identifier) {
+    const labelString = labels.join(":");
+
+    const query = `MATCH (n:${labelString} {identifier: $identifier}) DELETE n`;
     const params = { identifier };
-     try {
-      this.driver.executeQuery(query, params);
+    try {
+      await this.driver.executeQuery(query, params);
     } catch (err) {
       logger.error(err);
-      throw new (err);
+      throw err;
     }
   }
 
-  addEdge(
-    relationType: string,
-    sourceLabel: string,
+  async addEdge(
+    relationLabels: [string],
+    sourceLabels: [string],
     sourcePropName: string,
     sourcePropValue: any,
-    targetLabel: string,
+    targetLabels: [string],
     targetPropName: string,
     targetPropValue: any,
     properties: { [key: string]: any }
   ) {
+     const sourceLabelString = sourceLabels.join(":");
+     const targetLabelString = targetLabels.join(":");
+     const relationLabelString = relationLabels.join(":");
+
     const query = `
-          MATCH (a:${sourceLabel} {${sourcePropName}: "${sourcePropValue}"}), 
-                (b:${targetLabel} {${targetPropName}: "${targetPropValue}"})
-          CREATE (a)-[r:${relationType}]->(b)
+          MATCH (a:${sourceLabelString} {${sourcePropName}: "${sourcePropValue}"}), 
+                (b:${targetLabelString} {${targetPropName}: "${targetPropValue}"})
+          CREATE (a)-[r:${relationLabelString}]->(b)
           SET r += $properties
           RETURN r;
             `;
 
     const params = {
-      sourceLabel: sourceLabel,
       sourcePropName: sourcePropName,
       sourcePropValue: sourcePropValue,
-      targetLabel: targetLabel,
       targetPropName: targetPropName,
       targetPropValue: targetPropValue,
       properties: properties,
-      relationType: relationType,
     };
 
-     try {
-      this.driver.executeQuery(query, params);
+    try {
+      await this.driver.executeQuery(query, params);
     } catch (err) {
       logger.error(err);
-      throw new (err);
+      throw err;
     }
   }
 
-  deleteEdge(relationType: string, properties: any, remote: boolean) {
-    const query = `MATCH ()-[r:${relationType} {identifier: $properties.identifier}]-() DELETE r`;
+  async deleteEdge(relationLabels: [string], properties: any, remote: boolean) {
+    const relationLabelString = relationLabels.join(":");
+    const query = `MATCH ()-[r:${relationLabelString} {identifier: $properties.identifier}]-() DELETE r`;
     const params = {
-      relationType: relationType,
       properties: properties,
     };
-     try {
-      this.driver.executeQuery(query, params);
+    try {
+      await this.driver.executeQuery(query, params);
     } catch (err) {
       logger.error(err);
-      throw new (err);
+      throw err;
     }
   }
 }

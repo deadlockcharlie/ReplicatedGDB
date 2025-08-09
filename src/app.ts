@@ -36,7 +36,7 @@ new WebsocketProvider(
   process.env.WS_URI,
   "GraceSyncKey",
   ydoc,
-  { WebSocketPolyfill }
+  WebSocketPolyfill
 );
 
 // Setup Database

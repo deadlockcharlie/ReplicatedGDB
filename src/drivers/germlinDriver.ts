@@ -30,10 +30,11 @@ export class GremlinDriver extends DatabaseDriver {
     }
   }
 
-  async addVertex(label, properties) {
+  async addVertex(labels, properties) {
     logger.info("Adding vertex");
     try {
-      const traversal = this.driver.addV(label);
+      const traversal = this.driver.addV('Node');
+      traversal.property('Labels', labels);
       logger.info(traversal);
       for (const [key, value] of Object.entries(properties)) {
         traversal.property(key, value);
@@ -67,11 +68,11 @@ export class GremlinDriver extends DatabaseDriver {
   }
 
   addEdge(
-    relationType: string,
-    sourceLabel: string,
+    relationLabels: [string],
+    sourceLabels: [string],
     sourcePropName: string,
     sourcePropValue: any,
-    targetLabel: string,
+    targetLabels: [string],
     targetPropName: string,
     targetPropValue: any,
     properties: { [key: string]: any }
@@ -83,7 +84,8 @@ export class GremlinDriver extends DatabaseDriver {
         .as("target")
         .V()
         .has(sourcePropName, sourcePropValue)
-        .addE(relationType)
+        .addE()
+        .property('Label', relationLabels)
         .to("target");
 
       for (const [key, value] of Object.entries(properties)) {
@@ -98,7 +100,7 @@ export class GremlinDriver extends DatabaseDriver {
     }
   }
 
-  deleteEdge(relationType: string, properties: any, remote: boolean) {
+  deleteEdge(relationLabels: [string], properties: any, remote: boolean) {
     try {
       (async () => {
         this.driver

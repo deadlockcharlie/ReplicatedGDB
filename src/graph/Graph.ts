@@ -19,7 +19,7 @@ export type EdgeInformation = {
 
 export type VertexInformation = {
   id: string;
-  label: string;
+  labels: [string];
   properties: { [key: string]: any };
 };
 
@@ -45,7 +45,7 @@ export class Vertex_Edge {
   }
 
   public async addVertex(
-    label: string,
+    labels: [string],
     properties: { [key: string]: any },
     remote: boolean
   ) {
@@ -57,12 +57,12 @@ export class Vertex_Edge {
       );
     }
     // Update the database
-    await driver.addVertex(label, properties);
+    await driver.addVertex(labels, properties);
     // Only update local structures if not a remote sync
     if (!remote) {
       const vertex: VertexInformation = {
         id: properties.identifier,
-        label,
+        labels,
         properties,
       };
 
@@ -72,13 +72,14 @@ export class Vertex_Edge {
   }
 
   public async removeVertex(
-    label: string,
+    labels: [string],
     properties: Record<string, any>,
     remote: boolean
   ) {
+    try{
     const identifier = properties.identifier;
     // update the database
-    await driver.deleteVertex(label, identifier);
+    await driver.deleteVertex(labels, identifier);
 
     const exists = this.GVertices.get(identifier);
 
@@ -90,6 +91,9 @@ export class Vertex_Edge {
       this.GVertices.delete(identifier);
       this.listener.deleteVertex(identifier);
     }
+  } catch(err){
+    throw err;
+  }
   }
 
   public async addEdge(
@@ -181,13 +185,13 @@ export class Vertex_Edge {
           if (change.action === "add") {
             const vertex = this.GVertices.get(key);
             if (vertex) {
-              this.addVertex(vertex.label, vertex.properties, true).catch(
+              this.addVertex(vertex.labels, vertex.properties, true).catch(
                 console.error
               );
             }
           } else if (change.action === "delete") {
             const oldValue = change.oldValue as VertexInformation;
-            this.removeVertex(oldValue.label, oldValue.properties, true).catch(
+            this.removeVertex(oldValue.labels, oldValue.properties, true).catch(
               console.error
             );
           }
