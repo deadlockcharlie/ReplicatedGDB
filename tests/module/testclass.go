@@ -5,12 +5,14 @@ import (
 	"os/exec"
  	"io"
 	"bytes"
- 	"log"
  	"net/http"
 	"encoding/json"
-	"fmt"
-	"context"
     "github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"context"
+	"fmt"
+	"log"
+	"github.com/go-gremlin/gremlin"
+
 )
 
 type TestClass struct {
@@ -64,8 +66,6 @@ func (p *TestClass) Cypher_query(DB_URL string, DB_USER string, DB_Password stri
 	for _, record := range result.Records {
 	    name, _ := record.Get("name")  // .Get() 2nd return is whether key is present
 	    fmt.Println(name)
-	    // or
-	    // fmt.Println(record.AsMap())  // get Record as a map
 	}
 
 	// Summary information
@@ -73,6 +73,25 @@ func (p *TestClass) Cypher_query(DB_URL string, DB_USER string, DB_Password stri
 	    result.Summary.Query().Text(), len(result.Records),
 	    result.Summary.ResultAvailableAfter())
 }
+
+func (p *TestClass) Gremlin_query(DB_URL string, DB_USER string, DB_Password string, gremlinQuery string, bindings map[string]any) {
+    auth := gremlin.OptAuthUserPass(DB_USER, DB_Password)
+
+    client, err := gremlin.NewClient(DB_URL, auth)
+    if err != nil {
+        panic(err)
+    }
+    defer client.Ws.Close()
+
+    req := gremlin.Query(gremlinQuery).Bindings(gremlin.Bind(bindings))
+    data, err := client.Exec(req) 
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Printf("The query returned %v", string(data))
+}
+
 //from go implementation both neo4j and memgraph use the neo4j driver so we can just use this function for both
 func (p *TestClass) Api_post_request(REPLICA_URL string, api_request string, request_body map[string]any){
 	// Marshal the request body to JSON
