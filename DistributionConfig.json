@@ -5,10 +5,16 @@
   "base_prometheus_port": 9090,
   "base_grafana_port": 5000,
   "provider_port": 1234,
-  "provider": false,
+  "provider": true,
   "dbs" : [
     {
     "database": "neo4j", 
+    "connected_to_provider": false, 
+    "password": "verysecretpassword",
+    "user": "neo4j"
+    },
+     {
+    "database": "janusgraph", 
     "connected_to_provider": false, 
     "password": "verysecretpassword",
     "user": "neo4j"

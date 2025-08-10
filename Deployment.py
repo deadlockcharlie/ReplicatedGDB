@@ -245,7 +245,47 @@ def up_all():
     if(config["provider"]):
         subprocess.run(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up","--build", "-d", "--force-recreate"], check=True)
 
-    
+def add_stack():
+  config = load_config()
+  total_defined = len(config["dbs"])
+
+  # Detect which stacks already have compose files
+  existing_files = [
+      f for f in os.listdir("./Dockerfiles")
+      if re.match(r"docker-compose\.(\d+)\.yml", f)
+  ]
+  existing_indices = sorted([
+      int(re.match(r"docker-compose\.(\d+)\.yml", f).group(1))
+      for f in existing_files
+  ])
+
+  if len(existing_indices) >= total_defined:
+      print("All stacks from the config are already deployed.")
+      sys.exit(0)
+
+  # Next unused index (1-based in filenames, but 0-based in config)
+  next_index = max(existing_indices, default=0)  # 0 if none exist
+  i = next_index  # this is zero-based for config
+
+  db_conf = config['dbs'][i]
+  filename = generate_compose_file(i, db_conf, config)
+
+  # If connected to provider, ensure network exists
+  if db_conf["connected_to_provider"]:
+      net_name = f"Grace_net_{i+1}"
+      network_create([net_name])
+      # Update provider to attach to new network
+      generate_provider(config, [net_name])
+      subprocess.run(
+          ["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up", "-d"],
+          check=True
+      )
+
+  print(f"Starting containers for stack {i+1}...")
+  subprocess.run(
+      ["docker", "compose", "-f", filename, "up", "--build", "-d"],
+      check=True
+  )
 
 def down_all():
     config = load_config()
@@ -321,6 +361,8 @@ def main():
         generate_all()
     elif command == "up":
         up_all()
+    elif command == "add-replica":
+        add_stack()
     elif command == "down":
         down_all()
     elif command == "force-clean":    
