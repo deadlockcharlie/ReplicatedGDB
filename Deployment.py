@@ -2,10 +2,55 @@ import sys
 import string
 import subprocess
 import json
+import yaml
 import os
 import re
 from textwrap import dedent, indent
+import time
+import threading
 
+VERBOSE = False
+
+def spinner(stop_event):
+    spinner_chars = ['|', '/', '-', '\\']
+    idx = 0
+    while not stop_event.is_set():
+        print('\r' + spinner_chars[idx % len(spinner_chars)] + '...', end='', flush=True)
+        idx += 1
+        time.sleep(0.1)
+    print('\r', end='')
+
+
+def run_command(cmd):
+    global VERBOSE
+    print(VERBOSE)
+    if VERBOSE:
+        process = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+        process.wait()
+        rc = process.returncode
+    else:
+        stop_event = threading.Event()
+        thread = threading.Thread(target=spinner, args=(stop_event,))
+        thread.start()
+
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+
+        stop_event.set()
+        thread.join()
+        rc = process.returncode
+
+        # Optionally: print output on failure or log
+        if rc != 0:
+            print(stdout.decode())
+            print(stderr.decode(), file=sys.stderr)
+            
+    if rc == 0:
+        print("✅ Done.")
+    else:
+        print(f"❌ Command failed with code {rc}")
+    return rc
+    
 
 def load_config(path="DistributionConfig.json"):
     with open(path, "r") as f:
@@ -15,7 +60,7 @@ def network_create(external_network_instances):
   for n in external_network_instances:
     print(f"Creating network: {n}...")
     try: 
-      subprocess.run(["docker", "network", "create", n], check=True)
+      run_command(["docker", "network", "create", n])
     except Exception: pass
 
 def generate_provider(config, external_network_instances):
@@ -232,60 +277,95 @@ def generate_all():
     for i in range(n):
         files.append(generate_compose_file(i, config['dbs'][i], config))
         if config['dbs'][i]['connected_to_provider']: external_network_instances.append((f"Grace_net_{i+1}"))
-        generate_provider(config, external_network_instances)
-        #files.append(provider)
+    provider = generate_provider(config, external_network_instances)
+    files.append(provider)
     return files
 
 def up_all():
     config = load_config()
     files = generate_all()
+    existing_files = [
+      (os.path.join("./Dockerfiles", f))
+      for f in os.listdir("./Dockerfiles")
+      if os.path.isfile(os.path.join("./Dockerfiles", f)) and f.lower().endswith(('.yaml', '.yml'))
+    ]
+
+    for file in existing_files:
+      if file not in files:
+          print(f"Deleting {file} ...")
+          os.remove(file)
+
     for file in files:
-        print(f"Starting containers from {file}...")
-        subprocess.run(["docker","compose", "-f", file, "up","--build", "-d", "--force-recreate"], check=True)
-    if(config["provider"]):
-        subprocess.run(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up","--build", "-d", "--force-recreate"], check=True)
+      stack_name = get_stack_name(file)
+      if not stack_name:
+          print(f"⚠️ No 'name' found in {file}, skipping")
+          continue
+      running = is_stack_running(stack_name)
+      status = " ✅ Running" if running else "❌ Not running, will start"
+      print(f"{stack_name}: {status}")
+      if not running:
+          run_command(["docker","compose", "-f", file, "up","--build", "-d", "--force-recreate"])
+      else:
+          continue
+    # if(config["provider"]):
+      run_command(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up","--build", "-d", "--force-recreate"])
 
-def add_stack():
-  config = load_config()
-  total_defined = len(config["dbs"])
+def get_stack_name(compose_file):
+    # Extract the project name from the compose file's 'name' field.
+    with open(compose_file, 'r') as f:
+        try:
+            data = yaml.safe_load(f)
+            return data.get('name', None)
+        except yaml.YAMLError as e:
+            print(f"YAML error in {compose_file}: {e}")
+            return None
 
-  # Detect which stacks already have compose files
-  existing_files = [
-      f for f in os.listdir("./Dockerfiles")
-      if re.match(r"docker-compose\.(\d+)\.yml", f)
-  ]
-  existing_indices = sorted([
-      int(re.match(r"docker-compose\.(\d+)\.yml", f).group(1))
-      for f in existing_files
-  ])
+def is_stack_running(stack_name):
+    """Check if a docker compose project is running."""
+    try:
+        result = subprocess.run(
+            ['docker', 'compose', '-p', stack_name, 'ps', '--status', 'running'],
+            capture_output=True, text=True
+        )
+        return "Up" in result.stdout
+    except Exception as e:
+        print(f"Error checking {stack_name}: {e}")
+        return False
 
-  if len(existing_indices) >= total_defined:
-      print("All stacks from the config are already deployed.")
-      sys.exit(0)
 
-  # Next unused index (1-based in filenames, but 0-based in config)
-  next_index = max(existing_indices, default=0)  # 0 if none exist
-  i = next_index  # this is zero-based for config
+# def add_stack():
+#   config = load_config()
+#   generate_all()
 
-  db_conf = config['dbs'][i]
-  filename = generate_compose_file(i, db_conf, config)
+#   for file in os.listdir("./Dockerfiles"):
+#       compose_file = os.path.join("./Dockerfiles", file)
+#       stack_name = get_stack_name(compose_file)
+#       if not stack_name:
+#           print(f"⚠️ No 'name' found in {file}, skipping")
+#           continue
+#       running = is_stack_running(stack_name)
+#       status = " ✅ Running" if running else "❌ Not running, will start"
+#       print(f"{stack_name}: {status}")
 
-  # If connected to provider, ensure network exists
-  if db_conf["connected_to_provider"]:
-      net_name = f"Grace_net_{i+1}"
-      network_create([net_name])
-      # Update provider to attach to new network
-      generate_provider(config, [net_name])
-      subprocess.run(
-          ["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up", "-d"],
-          check=True
-      )
+#   db_conf = config['dbs'][i]
+#   filename = generate_compose_file(i, db_conf, config)
 
-  print(f"Starting containers for stack {i+1}...")
-  subprocess.run(
-      ["docker", "compose", "-f", filename, "up", "--build", "-d"],
-      check=True
-  )
+#   # If connected to provider, ensure network exists
+#   if db_conf["connected_to_provider"]:
+#       net_name = f"Grace_net_{i+1}"
+#       network_create([net_name])
+#       # Update provider to attach to new network
+#       generate_provider(config, [net_name])
+#       run_command(
+#           ["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up", "-d"],
+#           check=True
+#       )
+
+#   print(f"Starting containers for stack {i+1}...")
+#   run_command(
+#       ["docker", "compose", "-f", filename, "up", "--build", "-d"],
+#       check=True
+#   )
 
 def down_all():
     config = load_config()
@@ -294,11 +374,11 @@ def down_all():
         network = f"Grace_net_{i+1}"
         print(f"Stopping containers from {'./Dockerfiles/'+file}...")
 
-        subprocess.run(["docker","compose", "-f", './Dockerfiles/'+file , "down"], check=True)
+        run_command(["docker","compose", "-f", './Dockerfiles/'+file , "down"])
         print(f"Removing network {network}...")
-        subprocess.run(["docker", "network", "rm", network], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        run_command(["docker", "network", "rm", network])
     if (config["provider"]):
-        subprocess.run(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml' , "down"], check=True)
+        run_command(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml' , "down"])
         
 def force_clean():
   config = load_config()
@@ -310,9 +390,7 @@ def force_clean():
   for file in files:
     print(f'Tearing down {file} (containers, networks, images, volumes)')
     
-    subprocess.run(
-      ["docker", "compose", "-f", file, "down", "--remove-orphans", "--volumes", "--rmi", "local"], check = False
-    )
+    run_command(["docker", "compose", "-f", file, "down", "--remove-orphans", "--volumes", "--rmi", "local"])
 
   patterns = [
     r"^(neo4j|memgraph)\d+$",
@@ -329,8 +407,7 @@ def force_clean():
     for name in names_output.splitlines():
       if any(re.match(p, name) for p in patterns):
           print(f"Removing left-over container {name}...")
-          subprocess.run(["docker", "rm", "-f", name],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+          run_command(["docker", "rm", "-f", name])
   except Exception: pass
   
   net_patterns = [r"^Grace_net_\d+$", r"^Provider_net$"]
@@ -341,28 +418,33 @@ def force_clean():
       for net in nets_output.splitlines():
           if any(re.match(p, net) for p in net_patterns):
               print(f"Removing network {net}...")
-              subprocess.run(["docker", "network", "rm", net],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+              run_command(["docker", "network", "rm", net])
   except Exception: pass
     
   ########Uncomment to remove any unused containers, images and volumes 
    
-  subprocess.run(["docker", "container", "prune", "-f"], check=False)
-  subprocess.run(["docker", "image", "prune", "-f"], check=False)
-  subprocess.run(["docker", "volume", "prune", "-f"], check=False)
+  run_command(["docker", "container", "prune", "-f"])
+  run_command(["docker", "image", "prune", "-f"])
+  run_command(["docker", "volume", "prune", "-f"])
+  ### Remove docker files?
   
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python manage.py [generate|up|down|force-clean|rebuild]")
-        sys.exit(1)
+  
 
-    command = sys.argv[1]
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("command", choices=["generate","up", "down", "force-clean","rebuild"], help="Deployment Actions")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show full output when deploying")
+    args = parser.parse_args()
+
+    VERBOSE = args.verbose 
+    command = args.command
     if command == "generate":
         generate_all()
     elif command == "up":
         up_all()
-    elif command == "add-replica":
-        add_stack()
+    # elif command == "add-replica":
+    #     add_stack()
     elif command == "down":
         down_all()
     elif command == "force-clean":    
@@ -373,6 +455,3 @@ def main():
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
-
-if __name__ == "__main__":
-    main()

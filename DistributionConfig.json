@@ -7,18 +7,6 @@
   "provider_port": 1234,
   "provider": true,
   "dbs" : [
-    {
-    "database": "neo4j", 
-    "connected_to_provider": false, 
-    "password": "verysecretpassword",
-    "user": "neo4j"
-    },
-     {
-    "database": "janusgraph", 
-    "connected_to_provider": false, 
-    "password": "verysecretpassword",
-    "user": "neo4j"
-    }
-    
+  
   ]
 }
