@@ -7,7 +7,7 @@ yarn-error.log*
 Logs/
 dist/
 Dockerfiles/docker-compose.*.yml
-
+scratch
 # Environment variables
 .env
 .env.local

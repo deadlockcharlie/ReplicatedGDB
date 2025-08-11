@@ -10,6 +10,7 @@ import time
 import threading
 
 VERBOSE = False
+BENCHMARK = False
 
 def spinner(stop_event):
     spinner_chars = ['|', '/', '-', '\\']
@@ -23,7 +24,6 @@ def spinner(stop_event):
 
 def run_command(cmd):
     global VERBOSE
-    print(VERBOSE)
     if VERBOSE:
         process = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
         process.wait()
@@ -44,11 +44,11 @@ def run_command(cmd):
         if rc != 0:
             print(stdout.decode())
             print(stderr.decode(), file=sys.stderr)
-            
+    
     if rc == 0:
-        print("✅ Done.")
+      print("✅ Done.")  
     else:
-        print(f"❌ Command failed with code {rc}")
+      print(f"❌ Command failed with code {rc}")
     return rc
     
 
@@ -138,12 +138,15 @@ def generate_compose_file(i, db_conf, config):
         {db_name}:
           image: neo4j:4.4.24
           container_name: {db_name}
+          volumes:
+            - ../scratch/data:/data
+            - ../scratch/plugins:/plugins
           ports:
             - "{website_port}:7474"
             - "{protocol_port}:7687"
           environment:
-            NEO4J_AUTH: neo4j/{password}
-            NEO4J_server_config_strict__validation_enabled: false
+            NEO4J_AUTH: none
+            NEO4J_server_config_strict_validation_enabled: false
           healthcheck:
             test: [ "CMD", "bash", "-c", "cypher-shell -u neo4j -p {password} 'RETURN 1'" ]
             interval: 10s
@@ -205,7 +208,7 @@ def generate_compose_file(i, db_conf, config):
     environment = dedent(f"""
     WS_URI: "ws://wsserver:1234"
     DATABASE_URI: {db_url}
-    NEO4J_USER: "neo4j"
+    NEO4J_USER: "{db_user}"
     NEO4J_PASSWORD: "{password}"
     USER: {db_user}
     DATABASE: {database.upper()}
@@ -258,7 +261,9 @@ def generate_compose_file(i, db_conf, config):
         "",
         "networks:",
         f"  {network_name}:",
-        f"    external: {connected_to_provider}"
+        f"    external: {connected_to_provider}",
+        "volumes:",
+        "  neo4j_snapshot:"
     ]
 
     content = "\n".join(lines) + "\n"
@@ -301,7 +306,7 @@ def up_all():
           print(f"⚠️ No 'name' found in {file}, skipping")
           continue
       running = is_stack_running(stack_name)
-      status = " ✅ Running" if running else "❌ Not running, will start"
+      status = " ✅ Running" if running else "⚠️ Not running, will start"
       print(f"{stack_name}: {status}")
       if not running:
           run_command(["docker","compose", "-f", file, "up","--build", "-d", "--force-recreate"])
@@ -344,7 +349,7 @@ def is_stack_running(stack_name):
 #           print(f"⚠️ No 'name' found in {file}, skipping")
 #           continue
 #       running = is_stack_running(stack_name)
-#       status = " ✅ Running" if running else "❌ Not running, will start"
+#       status = " ✅ Running" if running else "⚠️ Not running, will start"
 #       print(f"{stack_name}: {status}")
 
 #   db_conf = config['dbs'][i]
@@ -433,12 +438,16 @@ def force_clean():
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["generate","up", "down", "force-clean","rebuild"], help="Deployment Actions")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Show full output when deploying")
+    parser.add_argument("command", choices=["generate","up", "down", "force-clean","rebuild"], help="Deployment Actions.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show full output when deploying.")
+    parser.add_argument("-b", "--benchmark", action="store_true", help="Pass this to prime the database with data.")
     args = parser.parse_args()
 
     VERBOSE = args.verbose 
     command = args.command
+
+    BENCHMARK = args.benchmark
+    
     if command == "generate":
         generate_all()
     elif command == "up":
