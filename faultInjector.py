@@ -7,7 +7,7 @@ import subprocess
 SHARED_NET = "Shared_net"
 
 # Fault timing
-FAULT_DURATION = 15
+FAULT_DURATION = 5
 COOLDOWN = 30
 
 # Name (or prefix) of your provider container
