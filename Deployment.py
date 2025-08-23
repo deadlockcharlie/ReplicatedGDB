@@ -57,6 +57,8 @@ def load_config(path="DistributionConfig.json"):
         return json.load(f)
       
 def network_create(external_network_instances):
+  print("Creating shared network: Shared_net")
+  run_command(["docker", "network", "create", "Shared_net"])
   for n in external_network_instances:
     print(f"Creating network: {n}...")
     try: 
@@ -83,8 +85,10 @@ def generate_provider(config, external_network_instances):
         "    environment:",
         f'      PORT: "{port}"',
         '      HOST: "0.0.0.0"',
+        "    cap_add:",
+        "       - NET_ADMIN",
         "    networks:",
-        "      - Provider_net",
+        "      - Shared_net"
     ]
     # attach to each external Grace network
     for n in external_network_instances:
@@ -94,7 +98,8 @@ def generate_provider(config, external_network_instances):
     lines += [
         "",
         "networks:",
-        "  Provider_net:",
+        "  Shared_net:",
+        "     external: true"
     ]
     for n in external_network_instances:
         lines += [
@@ -118,10 +123,11 @@ def generate_compose_file(i, db_conf, config):
     app_port = config["base_app_port"] + i
     prometheus_port = config["base_prometheus_port"] + i
     grafana_port = config["base_grafana_port"] + i
-
+    
+    app_log_level = db_conf["app_log_level"]
     database = db_conf["database"]
     password = db_conf["password"]
-    connected_to_provider = db_conf["connected_to_provider"]
+    # connected_to_provider = db_conf["connected_to_provider"]
     db_user = db_conf["user"]
 
     db_name = f"{database}{i+1}"
@@ -130,6 +136,15 @@ def generate_compose_file(i, db_conf, config):
     prometheus_name = f"Prometheus{i+1}"
     grafana_name = f"Grafana{i+1}"
     network_name = f"Grace_net_{i+1}"
+    
+    global BENCHMARK
+    mount=""
+    if BENCHMARK:
+      mount= (f"""
+          volumes:
+            - ../scratch/data:/data
+            - ../scratch/plugins:/plugins"
+      """)
 
 
     if database == "neo4j":
@@ -138,22 +153,22 @@ def generate_compose_file(i, db_conf, config):
         {db_name}:
           image: neo4j:4.4.24
           container_name: {db_name}
-          volumes:
-            - ../scratch/data:/data
-            - ../scratch/plugins:/plugins
+          {mount}
           ports:
             - "{website_port}:7474"
             - "{protocol_port}:7687"
           environment:
+            NEO4JLABS_PLUGINS: '["apoc", "graph-data-science"]'
+            ulimit nofile: 40000:40000
             NEO4J_AUTH: none
-            NEO4J_server_config_strict_validation_enabled: false
           healthcheck:
             test: [ "CMD", "bash", "-c", "cypher-shell -u neo4j -p {password} 'RETURN 1'" ]
             interval: 10s
             timeout: 5s
             retries: 10
           networks:
-            - {network_name}
+            - Shared_net
+
         """).strip("\n")
     elif database == "memgraph":  # memgraph
         db_url = f"bolt://{db_name}:{protocol_port}"
@@ -172,7 +187,8 @@ def generate_compose_file(i, db_conf, config):
           ports:
             - "{protocol_port}:7687"
           networks:
-            - {network_name}
+            - Shared_net
+
         lab{i+1}:
           image: memgraph/lab
           pull_policy: always
@@ -186,7 +202,8 @@ def generate_compose_file(i, db_conf, config):
             QUICK_CONNECT_MG_HOST: {db_name}
             QUICK_CONNECT_MG_PORT: 7687
           networks:
-            - {network_name}
+            - Shared_net
+
         """).strip("\n")
     elif database == "janusgraph":  # janusgraph
         db_url = f"ws://{db_name}:8182"
@@ -202,7 +219,7 @@ def generate_compose_file(i, db_conf, config):
           ports:
             - "{protocol_port}:8182"
           networks:
-            - {network_name}
+            - Shared_net
         """).strip("\n")
 
     environment = dedent(f"""
@@ -212,6 +229,7 @@ def generate_compose_file(i, db_conf, config):
     NEO4J_PASSWORD: "{password}"
     USER: {db_user}
     DATABASE: {database.upper()}
+    LOG_LEVEL: {app_log_level}
     """).strip("\n")
 
     # indent to exact nesting levels
@@ -233,37 +251,38 @@ def generate_compose_file(i, db_conf, config):
         f'      - "{app_port}:3000"',
         "    environment:",
         environment_block,
+        "    cap_add:",
+        "       - NET_ADMIN",
         "    depends_on:",
         f"      {db_name}:",
         "        condition: service_healthy",
         "    networks:",
-        f"      - {network_name}",
-        "",
-        "  prometheus:",
-        "    image: prom/prometheus",
-        f"    container_name: {prometheus_name}",
-        "    volumes:",
-        "      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml",
-        "    ports:",
-        f'      - "{prometheus_port}:9090"',
-        "    networks:",
-        f"      - {network_name}",
-        "",
-        "  grafana:",
-        "    image: grafana/grafana",
-        f"    container_name: {grafana_name}",
-        "    ports:",
-        f'      - "{grafana_port}:3000"',
-        "    depends_on:",
-        "      - prometheus",
-        "    networks:",
-        f"      - {network_name}",
-        "",
+        f"      - Shared_net",
+        # "",
+        # "  prometheus:",
+        # "    image: prom/prometheus",
+        # f"    container_name: {prometheus_name}",
+        # "    volumes:",
+        # "      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml",
+        # "    ports:",
+        # f'      - "{prometheus_port}:9090"',
+        # "    networks:",
+        # f"      - {network_name}",
+        # "",
+        # "  grafana:",
+        # "    image: grafana/grafana",
+        # f"    container_name: {grafana_name}",
+        # "    ports:",
+        # f'      - "{grafana_port}:3000"',
+        # "    depends_on:",
+        # "      - prometheus",
+        # "    networks:",
+        # f"      - {network_name}",
+        # "",
         "networks:",
-        f"  {network_name}:",
-        f"    external: {connected_to_provider}",
-        "volumes:",
-        "  neo4j_snapshot:"
+        f"  Shared_net:",
+        f"    external: true"
+
     ]
 
     content = "\n".join(lines) + "\n"
@@ -277,13 +296,14 @@ def generate_all():
     config = load_config()
     files = []
     n = len(config['dbs'])
-    external_network_instances = []    
+    external_network_instances = []   
+    if(config["provider"]):
+      provider = generate_provider(config, external_network_instances)
+      files.append(provider) 
     
     for i in range(n):
         files.append(generate_compose_file(i, config['dbs'][i], config))
-        if config['dbs'][i]['connected_to_provider']: external_network_instances.append((f"Grace_net_{i+1}"))
-    provider = generate_provider(config, external_network_instances)
-    files.append(provider)
+        # if config['dbs'][i]['connected_to_provider']: external_network_instances.append((f"Grace_net_{i+1}"))
     return files
 
 def up_all():
@@ -301,6 +321,7 @@ def up_all():
           os.remove(file)
 
     for file in files:
+      print("filename"+file)
       stack_name = get_stack_name(file)
       if not stack_name:
           print(f"⚠️ No 'name' found in {file}, skipping")
@@ -313,7 +334,7 @@ def up_all():
       else:
           continue
     # if(config["provider"]):
-      run_command(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up","--build", "-d", "--force-recreate"])
+    #   run_command(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up","--build", "-d", "--force-recreate"])
 
 def get_stack_name(compose_file):
     # Extract the project name from the compose file's 'name' field.
@@ -337,43 +358,9 @@ def is_stack_running(stack_name):
         print(f"Error checking {stack_name}: {e}")
         return False
 
-
-# def add_stack():
-#   config = load_config()
-#   generate_all()
-
-#   for file in os.listdir("./Dockerfiles"):
-#       compose_file = os.path.join("./Dockerfiles", file)
-#       stack_name = get_stack_name(compose_file)
-#       if not stack_name:
-#           print(f"⚠️ No 'name' found in {file}, skipping")
-#           continue
-#       running = is_stack_running(stack_name)
-#       status = " ✅ Running" if running else "⚠️ Not running, will start"
-#       print(f"{stack_name}: {status}")
-
-#   db_conf = config['dbs'][i]
-#   filename = generate_compose_file(i, db_conf, config)
-
-#   # If connected to provider, ensure network exists
-#   if db_conf["connected_to_provider"]:
-#       net_name = f"Grace_net_{i+1}"
-#       network_create([net_name])
-#       # Update provider to attach to new network
-#       generate_provider(config, [net_name])
-#       run_command(
-#           ["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml', "up", "-d"],
-#           check=True
-#       )
-
-#   print(f"Starting containers for stack {i+1}...")
-#   run_command(
-#       ["docker", "compose", "-f", filename, "up", "--build", "-d"],
-#       check=True
-#   )
-
 def down_all():
     config = load_config()
+    
     for i in range(len(config["dbs"])):
         file = f"docker-compose.{i+1}.yml"
         network = f"Grace_net_{i+1}"
@@ -384,6 +371,7 @@ def down_all():
         run_command(["docker", "network", "rm", network])
     if (config["provider"]):
         run_command(["docker","compose", "-f", './Dockerfiles/docker-compose.provider.yml' , "down"])
+    run_command(["docker", "network", "rm", "Shared_net"])
         
 def force_clean():
   config = load_config()
@@ -440,13 +428,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=["generate","up", "down", "force-clean","rebuild"], help="Deployment Actions.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show full output when deploying.")
-    parser.add_argument("-b", "--benchmark", action="store_true", help="Pass this to prime the database with data.")
+    # parser.add_argument("-b", "--benchmark", action="store_true", help="Preload the database with snapshot data.")
     args = parser.parse_args()
 
     VERBOSE = args.verbose 
     command = args.command
 
-    BENCHMARK = args.benchmark
+    # BENCHMARK = args.benchmark
     
     if command == "generate":
         generate_all()

@@ -36,11 +36,11 @@ export class Neo4jDriver extends DatabaseDriver {
     }
   }
 
-  async deleteVertex(labels, identifier) {
+  async deleteVertex(labels, id) {
     const labelString = labels.join(":");
 
-    const query = `MATCH (n:${labelString} {identifier: $identifier}) DELETE n`;
-    const params = { identifier };
+    const query = `MATCH (n:${labelString} {id: $id}) DELETE n`;
+    const params = { id };
     try {
       await this.driver.executeQuery(query, params);
     } catch (err) {
@@ -89,7 +89,7 @@ export class Neo4jDriver extends DatabaseDriver {
 
   async deleteEdge(relationLabels: [string], properties: any, remote: boolean) {
     const relationLabelString = relationLabels.join(":");
-    const query = `MATCH ()-[r:${relationLabelString} {identifier: $properties.identifier}]-() DELETE r`;
+    const query = `MATCH ()-[r:${relationLabelString} {id: $properties.id}]-() DELETE r`;
     const params = {
       properties: properties,
     };

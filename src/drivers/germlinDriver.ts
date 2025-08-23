@@ -48,12 +48,12 @@ export class GremlinDriver extends DatabaseDriver {
     }
   }
 
-  deleteVertex(_label, identifier) {
+  deleteVertex(_label, id) {
     try {
       (async () => {
         await this.driver
           .V()
-          .has("identifier", identifier)
+          .has("id", id)
           .as("v")
           .bothE()
           .drop()
@@ -105,7 +105,7 @@ export class GremlinDriver extends DatabaseDriver {
       (async () => {
         this.driver
           .E()
-          .has("identifier", properties.identifier)
+          .has("id", properties.id)
           .drop()
           .iterate();
       })();

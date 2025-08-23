@@ -11,14 +11,13 @@ export async function addVertex(req, res) {
         properties: properties,
       })}`
     );
-    res.json({
+    res.status(200).json({
       label: label,
       properties: properties,
     });
   } catch (err) {
     logger.error(`Error adding vertex ${err}`);
-    res.status(500);
-    res.json(`Error adding vertex ${err}`);
+    res.status(500).json(`Error adding vertex ${err}`);
   }
 }
 
@@ -57,8 +56,7 @@ export async function addEdge(req, res) {
       targetPropValue: targetPropValue,
       properties: properties,
     })}`)
-
-    res.json({
+    res.status(200).json({
       relationType: relationType,
       sourceLabel: sourceLabel,
       sourcePropName: sourcePropName,
@@ -70,8 +68,7 @@ export async function addEdge(req, res) {
     });
   } catch (err) {
     logger.error(`Error adding edge ${err}`);
-    res.status(500);
-    res.json(`Error adding edge ${err}`);
+    res.status(500).json(`Error adding edge ${err}`);
   }
 }
 
@@ -81,11 +78,10 @@ export async function deleteVertex(req, res) {
     const properties = req.body.properties;
     await graph.removeVertex(label, properties, false);
     logger.info(`Vertex deleted: ${JSON.stringify({label:label, properties:properties})}`);
-    res.json({label:label, properties:properties});
+    res.status(200).json({label:label, properties:properties});
   } catch (err) {
     logger.error(`Error removing vertex ${err}`);
-    res.status(500);
-    res.json(`Error removing vertex ${err}`);
+    res.status(500).json(`Error removing vertex ${err}`);
   }
 }
 
@@ -96,10 +92,9 @@ export async function deleteEdge(req, res) {
 
     await graph.removeEdge(relationType, properties, false);
     logger.info(`Edge deleted: ${JSON.stringify({relationType:relationType, properties:properties})}`);
-    res.json({relationType:relationType, properties:properties});
+    res.status(200).json({relationType:relationType, properties:properties});
   } catch (err) {
     logger.error(`Error deleting edge ${err}`);
-    res.status(500);
-    res.json(`Error deleting edge ${err}`);
+    res.status(500).json(`Error deleting edge ${err}`);
   }
 }

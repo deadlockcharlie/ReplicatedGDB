@@ -5,6 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 Logs/
+error_log.txt
 dist/
 Dockerfiles/docker-compose.*.yml
 scratch

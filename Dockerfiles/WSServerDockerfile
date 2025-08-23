@@ -1,9 +1,10 @@
-FROM node:24-alpine
+FROM node:24-bullseye
 
 WORKDIR /app
 
 COPY ./provider-package.json ./package.json
 RUN npm install
+RUN apt-get update && apt-get install -y iproute2 iptables
 
 
 CMD ["npx", "y-websocket"]

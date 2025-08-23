@@ -1,4 +1,4 @@
-//Adding unique identifier generator - UUID, append serverid, or smth else
+//Adding unique id generator - UUID, append serverid, or smth else
 //removing dangling edges
 //pre condition that source and target are edges
 
@@ -20,7 +20,7 @@ export type EdgeInformation = {
 export type VertexInformation = {
   id: string;
   labels: [string];
-  properties: { [key: string]: any };
+  properties: { [key: string]: Y.Map<VertexInformation> };
 };
 
 export type Listener = {
@@ -32,8 +32,8 @@ export type Listener = {
 
 export class Vertex_Edge {
   private ydoc: Y.Doc;
-  private GVertices: Y.Map<VertexInformation>;
-  private GEdges: Y.Map<EdgeInformation>;
+  public GVertices: Y.Map<VertexInformation>;
+  public GEdges: Y.Map<EdgeInformation>;
   private listener: Listener;
 
   constructor(ydoc: Y.Doc, listener: Listener) {
@@ -49,11 +49,11 @@ export class Vertex_Edge {
     properties: { [key: string]: any },
     remote: boolean
   ) {
-    const existingVertex = this.GVertices.get(properties.identifier);
+    const existingVertex = this.GVertices.get(properties.id);
     // Prevent duplicate entries if not remote
     if (existingVertex && !remote) {
       throw new Error(
-        `Vertex with identifier "${properties.identifier}" already exists`
+        `Vertex with id "${properties.id}" already exists`
       );
     }
     // Update the database
@@ -61,13 +61,13 @@ export class Vertex_Edge {
     // Only update local structures if not a remote sync
     if (!remote) {
       const vertex: VertexInformation = {
-        id: properties.identifier,
+        id: properties.id,
         labels,
         properties,
       };
 
-      this.GVertices.set(properties.identifier, vertex);
-      this.listener.addVertex(properties.identifier);
+      this.GVertices.set(properties.id, vertex);
+      this.listener.addVertex(properties.id);
     }
   }
 
@@ -77,19 +77,19 @@ export class Vertex_Edge {
     remote: boolean
   ) {
     try{
-    const identifier = properties.identifier;
+    const id = properties.id;
     // update the database
-    await driver.deleteVertex(labels, identifier);
+    await driver.deleteVertex(labels, id);
 
-    const exists = this.GVertices.get(identifier);
+    const exists = this.GVertices.get(id);
 
     if (!exists && !remote) {
-      throw new Error(`Vertex with identifier "${identifier}" does not exist`);
+      throw new Error(`Vertex with id "${id}" does not exist`);
     }
     if (!remote) {
       // vertex and associated link data
-      this.GVertices.delete(identifier);
-      this.listener.deleteVertex(identifier);
+      this.GVertices.delete(id);
+      this.listener.deleteVertex(id);
     }
   } catch(err){
     throw err;
@@ -107,7 +107,7 @@ export class Vertex_Edge {
     properties: { [key: string]: any },
     remote: boolean
   ) {
-    const edgeId = properties.identifier;
+    const edgeId = properties.id;
 
     if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
       throw new Error("Source and/or target vertex do not exist");
@@ -115,7 +115,7 @@ export class Vertex_Edge {
     const existingEdge = this.GEdges.get(edgeId);
     //Dont allow duplicates if we are not remote
     if (existingEdge && !remote) {
-      throw new Error(`Edge with identifier "${edgeId}" already exists`);
+      throw new Error(`Edge with id "${edgeId}" already exists`);
     }
     
 
@@ -155,17 +155,17 @@ export class Vertex_Edge {
     properties: any,
     remote: boolean
   ) {
-    // Ensure the a unique identifier is provided
+    // Ensure the a unique id is provided
 
-    if (!properties.identifier || !relationType) {
+    if (!properties.id || !relationType) {
       throw new Error(
-        "Identifier and relation type is required to delete an edge"
+        "id and relation type is required to delete an edge"
       );
     }
-    const edge = this.GEdges.get(properties.identifier);
+    const edge = this.GEdges.get(properties.id);
 
     if (edge == undefined && !remote) {
-      throw new Error("Edge with this identifier does not exist");
+      throw new Error("Edge with this id does not exist");
     } else {
       await driver.deleteEdge(relationType, properties, remote);
       if (!remote) {
@@ -173,7 +173,7 @@ export class Vertex_Edge {
           throw Error("Undefined Edge");
         }
         this.listener.deleteEdge(edge.sourceLabel, edge);
-        this.GEdges.delete(properties.identifier);
+        this.GEdges.delete(properties.id);
       }
     }
   }
@@ -183,6 +183,7 @@ export class Vertex_Edge {
       if (!transaction.local) {
         event.changes.keys.forEach((change, key) => {
           if (change.action === "add") {
+            logger.info("Remote update observed "+ change);
             const vertex = this.GVertices.get(key);
             if (vertex) {
               this.addVertex(vertex.labels, vertex.properties, true).catch(

@@ -9,9 +9,15 @@
   "dbs" : [
     {
       "database": "neo4j", 
-      "connected_to_provider": true, 
       "password": "verysecretpassword",
-      "user": "pandey"
+      "user": "pandey",
+      "app_log_level": "info"
+    },
+     {
+      "database": "neo4j", 
+      "password": "verysecretpassword",
+      "user": "pandey",
+      "app_log_level": "info"
     }
   ]
 }

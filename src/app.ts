@@ -10,7 +10,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-
+app.use((req, res, next) => {
+  res.set('Connection', 'close');
+  next();
+});
 
 import { logger } from "./helpers/logging";
 
@@ -79,6 +82,13 @@ import { query, checkSchema, validationResult, check } from "express-validator";
 import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
 
 {
+  app.get("/api/getGraph", async(req,res)=>{
+    console.log("getGraphCalled");
+    res.status(200).json({"vertices":JSON.stringify(graph.GVertices), "edges": JSON.stringify(graph.GEdges)})
+  })
+
+
+
   app.post(
     "/api/addVertex",
     checkSchema(VertexSchema, ["body"]),
@@ -88,8 +98,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
         logger.error(
           `Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
-        res.status(500);
-        res.json("Malformed request.");
+        res.status(500).json("Malformed request.");
       } else {
         await addVertex(req, res);
       }
@@ -105,8 +114,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
         logger.error(
           `Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
-        res.status(500);
-        res.json("Malformed request.");
+        res.status(500).json("Malformed request.");
       } else {
         await deleteVertex(req, res);
       }
@@ -122,8 +130,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
         logger.error(
           `Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
-        res.status(500);
-        res.json("Malformed request.");
+        res.status(500).json("Malformed request.");
       } else {
         await addEdge(req,res);
       }
@@ -139,8 +146,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
         logger.error(
           `Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
-        res.status(500);
-        res.json("Malformed request.");
+        res.status(500).json("Malformed request.");
       } else {
         await deleteEdge(req, res);
       }
