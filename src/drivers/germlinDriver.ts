@@ -30,6 +30,14 @@ export class GremlinDriver extends DatabaseDriver {
     }
   }
 
+  async getGraph() {
+      try{
+        const result = await this.driver.V().sample(50).toList();
+        return result;
+      } catch(err){
+        logger.error("getGraph: "+err);
+      }
+  }
   async addVertex(labels, properties) {
     logger.info("Adding vertex");
     try {
@@ -43,7 +51,7 @@ export class GremlinDriver extends DatabaseDriver {
       const result = await traversal.next();
       logger.info(result);
     } catch (err) {
-      logger.error(err);
+      logger.error("addVertex: "+err);
       throw err;
     }
   }
@@ -95,8 +103,8 @@ export class GremlinDriver extends DatabaseDriver {
         const result = await traversal.next();
       })();
     } catch (err) {
-      logger.error(err);
-      throw new err();
+      logger.error("addEdge: "+err);
+      throw new err;
     }
   }
 
@@ -110,7 +118,7 @@ export class GremlinDriver extends DatabaseDriver {
           .iterate();
       })();
     } catch (err) {
-      logger.error("Error in driver" + err);
+      logger.error("deleteEdge: " + err);
       throw new err();
     }
   }

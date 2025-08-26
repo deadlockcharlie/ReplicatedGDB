@@ -1,6 +1,18 @@
 import { logger } from "../helpers/logging";
 import { graph } from "../app";
 
+
+
+export async function getGraph(_req, res) {
+  try {
+    const result = await graph.getGraph();
+    res.status(200).json(result);
+  } catch (err) {
+    logger.error(`Error fetching graph ${err}`);
+    res.status(500).json(`Error fetching graph ${err}`);
+  }
+}
+
 export async function addVertex(req, res) {
   try {
     const { label, properties } = req.body;

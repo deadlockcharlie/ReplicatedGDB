@@ -1,6 +1,7 @@
 export abstract class DatabaseDriver {
   driver;
-
+  abstract getGraph();
+  
   abstract addVertex(labels: [string], properties: { [key: string]: any });
   abstract addEdge(
     relationLabels: [string],

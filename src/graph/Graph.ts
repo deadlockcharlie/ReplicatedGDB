@@ -44,6 +44,14 @@ export class Vertex_Edge {
     this.setupObservers();
   }
 
+
+  public async getGraph()
+  {
+    const result = await driver.getGraph();
+    return result;
+  }
+
+  
   public async addVertex(
     labels: [string],
     properties: { [key: string]: any },

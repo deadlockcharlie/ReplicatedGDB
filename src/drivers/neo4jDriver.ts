@@ -22,6 +22,19 @@ export class Neo4jDriver extends DatabaseDriver {
     })();
   }
 
+  async getGraph(){
+    const query = `MATCH (n) RETURN n LIMIT 50`;
+    const params = null;
+
+    try{
+      const result = await this.driver.executeQuery(query);
+      return result;
+    } catch(err){
+      logger.error(err);
+      throw err;
+    }
+  }
+
   async addVertex(labels, properties) {
     logger.info("Adding vertex");
     const labelString = labels.join(":");

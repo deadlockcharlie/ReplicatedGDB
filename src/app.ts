@@ -79,13 +79,12 @@ import {
 
 //Setup application routes
 import { query, checkSchema, validationResult, check } from "express-validator";
-import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
+import { getGraph, addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
 
 {
   app.get("/api/getGraph", async(req,res)=>{
-    console.log("getGraphCalled");
-    res.status(200).json({"vertices":JSON.stringify(graph.GVertices), "edges": JSON.stringify(graph.GEdges)})
-  })
+   await getGraph(req,res);
+});
 
 
 
@@ -96,7 +95,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Add Vertex Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
         res.status(500).json("Malformed request.");
       } else {
@@ -112,7 +111,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Delete Vertex Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
         res.status(500).json("Malformed request.");
       } else {
@@ -128,7 +127,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Add Edge Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
         res.status(500).json("Malformed request.");
       } else {
@@ -144,7 +143,7 @@ import { addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Delete Edge Malformed request rejected: ${JSON.stringify(validation.array())}`
         );
         res.status(500).json("Malformed request.");
       } else {
