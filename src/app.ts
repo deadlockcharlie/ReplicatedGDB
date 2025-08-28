@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 app.use((req, res, next) => {
-  res.set('Connection', 'close');
+  res.set("Connection", "close");
   next();
 });
 
@@ -43,32 +43,34 @@ new WebsocketProvider(
 );
 
 // Setup Database
-import {Neo4jDriver} from "./drivers/neo4jDriver";
-import {GremlinDriver} from "./drivers/germlinDriver";
+import { Neo4jDriver } from "./drivers/neo4jDriver";
+import { GremlinDriver } from "./drivers/germlinDriver";
 
 // logger.info(`environment: ${JSON.stringify(process.env)}`);
 const dbname = process.env.DATABASE;
 logger.info(`Database specified ${dbname}`);
 export var driver;
 switch (dbname) {
-    case "NEO4J":
-    case "MEMGRAPH":
-        driver = new Neo4jDriver();
+  case "NEO4J":
+  case "MEMGRAPH":
+    driver = new Neo4jDriver();
     break;
-    case "JANUSGRAPH":
-      driver = new GremlinDriver();
-      break;
-    default:
-        logger.error("No database specified in configuration. Cannot initialize driver.");
-        process.exit(1);
-        break;
+  case "JANUSGRAPH":
+    driver = new GremlinDriver();
+    break;
+  default:
+    logger.error(
+      "No database specified in configuration. Cannot initialize driver."
+    );
+    process.exit(1);
+    break;
 }
 
 // Setup graph
 import { Graph } from "./graph/GraphManager";
 import { Vertex_Edge } from "./graph/Graph";
 const GraphManager = new Graph();
-export const graph = new Vertex_Edge(ydoc, GraphManager);
+export const graph = new Vertex_Edge(ydoc);
 
 import {
   VertexSchema,
@@ -79,14 +81,19 @@ import {
 
 //Setup application routes
 import { query, checkSchema, validationResult, check } from "express-validator";
-import { getGraph, addVertex, deleteVertex, addEdge, deleteEdge } from "./routes/routes";
+import {
+  getGraph,
+  addVertex,
+  deleteVertex,
+  addEdge,
+  deleteEdge,
+} from "./routes/routes";
+import { final } from "stream-chain";
 
 {
-  app.get("/api/getGraph", async(req,res)=>{
-   await getGraph(req,res);
-});
-
-
+  app.get("/api/getGraph", async (req, res) => {
+    await getGraph(req, res);
+  });
 
   app.post(
     "/api/addVertex",
@@ -95,7 +102,9 @@ import { getGraph, addVertex, deleteVertex, addEdge, deleteEdge } from "./routes
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Add Vertex Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Add Vertex Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
         );
         res.status(500).json("Malformed request.");
       } else {
@@ -111,7 +120,9 @@ import { getGraph, addVertex, deleteVertex, addEdge, deleteEdge } from "./routes
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Delete Vertex Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Delete Vertex Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
         );
         res.status(500).json("Malformed request.");
       } else {
@@ -127,11 +138,13 @@ import { getGraph, addVertex, deleteVertex, addEdge, deleteEdge } from "./routes
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Add Edge Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Add Edge Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
         );
         res.status(500).json("Malformed request.");
       } else {
-        await addEdge(req,res);
+        await addEdge(req, res);
       }
     }
   );
@@ -143,7 +156,9 @@ import { getGraph, addVertex, deleteVertex, addEdge, deleteEdge } from "./routes
       const validation = validationResult(req);
       if (!validation.isEmpty()) {
         logger.error(
-          `Delete Edge Malformed request rejected: ${JSON.stringify(validation.array())}`
+          `Delete Edge Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
         );
         res.status(500).json("Malformed request.");
       } else {
@@ -157,8 +172,6 @@ import { getGraph, addVertex, deleteVertex, addEdge, deleteEdge } from "./routes
     next(createError(404));
   });
 }
-
-
 
 // error handler
 app.use(function (err, req, res, next) {
@@ -208,7 +221,6 @@ server.listen(port);
 server.on("error", onError);
 server.on("listening", onListening);
 
-
 function onError(error) {
   if (error.syscall !== "listen") {
     throw error;
@@ -235,18 +247,124 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
-function onListening() {
-  // console.log("Initializing Gremlin server connection...");
-  // const traversal = gremlin.process.AnonymousTraversalSource.traversal;
-  // g = traversal().withRemote(
-  //   new gremlin.driver.DriverRemoteConnection("ws://localhost:8182/gremlin")
-  // );
-  // console.log("Gremlin server connection initialized");
-  //
+const fs = require("fs");
+const { chain } = require("stream-chain");
+const { parser } = require("stream-json");
+const { pick } = require("stream-json/filters/Pick");
+const { streamArray } = require("stream-json/streamers/StreamArray");
+const { once } = require("events");
 
-  // If the middleware crashes and restarts, it needs to reinitialise the database. 
+async function onListening() {
+  // If the middleware crashes and restarts, it needs to reinitialise the database.
+  let path = process.env.PRELOAD_PATH;
+  let BATCH_SIZE = 1000;
+  if (checkFile(path)) {
+    try {
+      let vertexFut: Promise<any>[] = [];
+      let edgeFut = [];
+      // Load vertices from the file into YJS document
+
+      const vertexPipeline = chain([
+        fs.createReadStream(path),
+        parser(),
+        pick({ filter: "vertices" }),
+        streamArray(),
+      ]);
+
+      vertexPipeline.on("data", async ({ value }) => {
+        value.id = value._id.toString();
+        // logger.info(JSON.stringify(value));
+
+        vertexFut.push(
+          graph.addVertex(["vertex"], value, false).catch((err) => {
+            console.error("Vertex insert failed:", err);
+          })
+        );
+        if (vertexFut.length >= BATCH_SIZE) {
+          vertexPipeline.pause();
+          await Promise.all(vertexFut)
+            .then(() => {
+              vertexFut = [];
+              vertexPipeline.resume();
+            })
+            .catch((err) => {
+              console.error("Batch failed:", err);
+              vertexFut = [];
+              vertexPipeline.resume();
+            });
+        }
+      });
+
+      // Wait for final batch at the end of the stream
+      await vertexPipeline.on("end", async () => {
+        if (vertexFut.length > 0) {
+          await Promise.all(vertexFut);
+        }
+        logger.info("✅ All vertices inserted");
+
+        
+        const edgePipeline = chain([
+          fs.createReadStream(path),
+          parser(),
+          pick({ filter: "edges" }),
+          streamArray(),
+        ]);
+
+        edgePipeline.on("data", async ({ value }) => {
+          value.id = value._id.toString();
+          edgeFut.push(
+            graph.addEdge(
+              ["edge"],
+              ["vertex"],
+              "id",
+              value._outV.toString(),
+              ["vertex"],
+              "id",
+              value._inV.toString(),
+              value,
+              false
+            )
+          );
+          if (edgeFut.length >= BATCH_SIZE) {
+            edgePipeline.pause();
+            await Promise.all(edgeFut)
+              .then(() => {
+                edgeFut = [];
+                edgePipeline.resume();
+              })
+              .catch((err) => {
+                console.error("Batch failed:", err);
+                vertexFut = [];
+                edgePipeline.resume();
+              });
+          }
+        });
+          await once(edgePipeline, "end");
+        await Promise.all(edgeFut);
+        logger.info("✅ All edges inserted");
+
+      });
+
+
+
+
+    } catch (e) {
+      logger.error("Exception when loading data from a file " + e);
+    }
+  }
 
   var addr = server.address();
   var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   logger.debug("Listening on " + bind);
+}
+
+async function checkFile(path) {
+  try {
+    await fs.access(path); // checks if readable
+    console.log("File exists");
+    return true;
+  } catch (err) {
+    console.log("File does not exist");
+    return false;
+  }
 }

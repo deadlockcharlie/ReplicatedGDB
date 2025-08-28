@@ -123,6 +123,7 @@ def generate_compose_file(i, db_conf, config):
     app_port = config["base_app_port"] + i
     prometheus_port = config["base_prometheus_port"] + i
     grafana_port = config["base_grafana_port"] + i
+
     
     app_log_level = db_conf["app_log_level"]
     database = db_conf["database"]
@@ -221,7 +222,7 @@ def generate_compose_file(i, db_conf, config):
           networks:
             - Shared_net
         """).strip("\n")
-
+    defaultpreloadPath= "/app/data/data.json"
     environment = dedent(f"""
     WS_URI: "ws://wsserver:1234"
     DATABASE_URI: {db_url}
@@ -230,11 +231,26 @@ def generate_compose_file(i, db_conf, config):
     USER: {db_user}
     DATABASE: {database.upper()}
     LOG_LEVEL: {app_log_level}
+    PRELOAD_PATH: {defaultpreloadPath}
     """).strip("\n")
+
+
+    
 
     # indent to exact nesting levels
     databaseService_block = indent(databaseService, "  ")  # under `services:`
     environment_block = indent(environment, "      ")      # under `environment:`
+    if "preload_data_path" in config and config["preload_data_path"].strip() !="" :
+      preload = dedent(f"""
+      volumes:
+        - {config["preload_data_path"]}:{defaultpreloadPath}
+                     """).strip("\n")
+      preload_block = indent(preload, "    ")
+    elif config["preload_data_path"].strip() =="":
+      print("preload_data_path specified with no file. Cannot mount empty path. Exiting")
+      sys.exit(0)
+    else :
+      preload_block = ""
 
 
     lines = [
@@ -251,6 +267,7 @@ def generate_compose_file(i, db_conf, config):
         f'      - "{app_port}:3000"',
         "    environment:",
         environment_block,
+        preload_block,
         "    cap_add:",
         "       - NET_ADMIN",
         "    depends_on:",

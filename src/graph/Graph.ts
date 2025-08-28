@@ -7,11 +7,11 @@ import {driver} from "../app";
 import {logger} from "../helpers/logging";
 export type EdgeInformation = {
   id: string;
-  relationType: string;
-  sourceLabel: string;
+  relationType: [string];
+  sourceLabel: [string];
   sourcePropName: string;
   sourcePropValue: any;
-  targetLabel: string;
+  targetLabel: [string];
   targetPropName: string;
   targetPropValue: any;
   properties: { [key: string]: any };
@@ -23,24 +23,24 @@ export type VertexInformation = {
   properties: { [key: string]: Y.Map<VertexInformation> };
 };
 
-export type Listener = {
-  addVertex: (id: string) => void;
-  deleteVertex: (id: string) => void;
-  addEdge: (id: string, edge: EdgeInformation) => void;
-  deleteEdge: (id: string, edge: EdgeInformation) => void;
-};
+// export type Listener = {
+//   addVertex: (id: string) => void;
+//   deleteVertex: (id: string) => void;
+//   addEdge: (id: string, edge: EdgeInformation) => void;
+//   deleteEdge: (id: string, edge: EdgeInformation) => void;
+// };
 
 export class Vertex_Edge {
   private ydoc: Y.Doc;
   public GVertices: Y.Map<VertexInformation>;
   public GEdges: Y.Map<EdgeInformation>;
-  private listener: Listener;
+  // private listener: Listener;
 
-  constructor(ydoc: Y.Doc, listener: Listener) {
+  constructor(ydoc: Y.Doc) {
     this.ydoc = ydoc;
     this.GVertices = ydoc.getMap("GVertices");
     this.GEdges = ydoc.getMap("GEdges");
-    this.listener = listener;
+    // this.listener = listener;
     this.setupObservers();
   }
 
@@ -55,7 +55,7 @@ export class Vertex_Edge {
   public async addVertex(
     labels: [string],
     properties: { [key: string]: any },
-    remote: boolean
+    remote: boolean,
   ) {
     const existingVertex = this.GVertices.get(properties.id);
     // Prevent duplicate entries if not remote
@@ -75,7 +75,7 @@ export class Vertex_Edge {
       };
 
       this.GVertices.set(properties.id, vertex);
-      this.listener.addVertex(properties.id);
+      // this.listener.addVertex(properties.id);
     }
   }
 
@@ -97,7 +97,7 @@ export class Vertex_Edge {
     if (!remote) {
       // vertex and associated link data
       this.GVertices.delete(id);
-      this.listener.deleteVertex(id);
+      // this.listener.deleteVertex(id);
     }
   } catch(err){
     throw err;
@@ -105,24 +105,25 @@ export class Vertex_Edge {
   }
 
   public async addEdge(
-    relationType: string,
-    sourceLabel: string,
+    relationType: [string],
+    sourceLabel: [string],
     sourcePropName: string,
-    sourcePropValue: any,
-    targetLabel: string,
+    sourcePropValue: string,
+    targetLabel: [string],
     targetPropName: string,
-    targetPropValue: any,
+    targetPropValue: string,
     properties: { [key: string]: any },
     remote: boolean
   ) {
     const edgeId = properties.id;
-
     if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
-      throw new Error("Source and/or target vertex do not exist");
+      throw new Error("Source and/or target vertex do not exist. Edge: "+ sourcePropValue +" "+ targetPropValue );
     }
     const existingEdge = this.GEdges.get(edgeId);
+    
     //Dont allow duplicates if we are not remote
     if (existingEdge && !remote) {
+      logger.error(JSON.stringify(existingEdge));
       throw new Error(`Edge with id "${edgeId}" already exists`);
     }
     
@@ -154,12 +155,12 @@ export class Vertex_Edge {
 
     if (!remote) {
       this.GEdges.set(edgeId, edge);
-      this.listener.addEdge(sourceLabel, edge);
+      // this.listener.addEdge(edgeId, edge);
     }
   }
 
   public async removeEdge(
-    relationType: string,
+    relationType: [string],
     properties: any,
     remote: boolean
   ) {
@@ -180,25 +181,26 @@ export class Vertex_Edge {
         if (edge == undefined) {
           throw Error("Undefined Edge");
         }
-        this.listener.deleteEdge(edge.sourceLabel, edge);
+        // this.listener.deleteEdge(edge.id, edge);
         this.GEdges.delete(properties.id);
       }
     }
   }
 
   private setupObservers() {
+
     this.GVertices.observe((event, transaction) => {
       if (!transaction.local) {
         event.changes.keys.forEach((change, key) => {
           if (change.action === "add") {
-            logger.info("Remote update observed "+ change);
+            logger.info("Remote update observed "+ (transaction));
             const vertex = this.GVertices.get(key);
             if (vertex) {
               this.addVertex(vertex.labels, vertex.properties, true).catch(
                 console.error
               );
             }
-          } else if (change.action === "delete") {
+          } else if (change.action === "delete" && !transaction) {
             const oldValue = change.oldValue as VertexInformation;
             this.removeVertex(oldValue.labels, oldValue.properties, true).catch(
               console.error

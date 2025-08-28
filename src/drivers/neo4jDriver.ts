@@ -14,10 +14,10 @@ export class Neo4jDriver extends DatabaseDriver {
     );
     (async () => {
       await this.driver.getServerInfo();
-      await this.driver.executeQuery("MATCH (n) DETACH DELETE n");
-      await this.driver.executeQuery("MATCH ()-[r]->() DELETE r");
+      // await this.driver.executeQuery("MATCH (n) DETACH DELETE n");
+      // await this.driver.executeQuery("MATCH ()-[r]->() DELETE r");
       logger.info(
-        "Database reinitialized. Any existing data has been deleted from the local database. Commencing sync with remote database..."
+        "Connected to the Database. There may be data already present. Ensure it has been removed. "
       );
     })();
   }

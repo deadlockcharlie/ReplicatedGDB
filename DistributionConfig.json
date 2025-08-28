@@ -6,24 +6,13 @@
   "base_grafana_port": 5000,
   "provider_port": 1234,
   "provider": true,
+  "preload_data_path":"/Users/pandey/work/GraphDBData/yeast.json",
   "dbs" : [
     {
-      "database": "memgraph", 
+      "database": "neo4j", 
       "password": "verysecretpassword",
       "user": "pandey",
-      "app_log_level": "error"
-    },
-    {
-      "database": "memgraph", 
-      "password": "verysecretpassword",
-      "user": "pandey",
-      "app_log_level": "error"
-    },
-    {
-      "database": "memgraph", 
-      "password": "verysecretpassword",
-      "user": "pandey",
-      "app_log_level": "error"
+      "app_log_level": "info"
     }
   ]
 }
