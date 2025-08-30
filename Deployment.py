@@ -169,6 +169,8 @@ def generate_compose_file(i, db_conf, config):
             retries: 10
           networks:
             - Shared_net
+          volumes:
+            - neo4j_data:/data
 
         """).strip("\n")
     elif database == "memgraph":  # memgraph
@@ -222,7 +224,6 @@ def generate_compose_file(i, db_conf, config):
           networks:
             - Shared_net
         """).strip("\n")
-    defaultpreloadPath= "/app/data/data.json"
     environment = dedent(f"""
     WS_URI: "ws://wsserver:1234"
     DATABASE_URI: {db_url}
@@ -231,7 +232,6 @@ def generate_compose_file(i, db_conf, config):
     USER: {db_user}
     DATABASE: {database.upper()}
     LOG_LEVEL: {app_log_level}
-    PRELOAD_PATH: {defaultpreloadPath}
     """).strip("\n")
 
 
@@ -239,18 +239,19 @@ def generate_compose_file(i, db_conf, config):
 
     # indent to exact nesting levels
     databaseService_block = indent(databaseService, "  ")  # under `services:`
-    environment_block = indent(environment, "      ")      # under `environment:`
-    if "preload_data_path" in config and config["preload_data_path"].strip() !="" :
-      preload = dedent(f"""
+    environment_block = indent(environment, "      ")    # under `environment:`
+    preload_block = ""
+    envPreload=False
+    if "preload_data" in config and config["preload_data"]==True :
+      envPreload = True
+      preload_block = dedent(f"""
       volumes:
-        - {config["preload_data_path"]}:{defaultpreloadPath}
+        neo4j_data:
+          external: true
                      """).strip("\n")
-      preload_block = indent(preload, "    ")
-    elif config["preload_data_path"].strip() =="":
-      print("preload_data_path specified with no file. Cannot mount empty path. Exiting")
+    elif config["preload_data"] !="true" or config["preload_data"] != "false":
+      print("preload_data specified with incorrect parameter. Expecting true or false. Exiting")
       sys.exit(0)
-    else :
-      preload_block = ""
 
 
     lines = [
@@ -267,7 +268,7 @@ def generate_compose_file(i, db_conf, config):
         f'      - "{app_port}:3000"',
         "    environment:",
         environment_block,
-        preload_block,
+        f"      PRELOAD: {envPreload}",
         "    cap_add:",
         "       - NET_ADMIN",
         "    depends_on:",
@@ -275,30 +276,10 @@ def generate_compose_file(i, db_conf, config):
         "        condition: service_healthy",
         "    networks:",
         f"      - Shared_net",
-        # "",
-        # "  prometheus:",
-        # "    image: prom/prometheus",
-        # f"    container_name: {prometheus_name}",
-        # "    volumes:",
-        # "      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml",
-        # "    ports:",
-        # f'      - "{prometheus_port}:9090"',
-        # "    networks:",
-        # f"      - {network_name}",
-        # "",
-        # "  grafana:",
-        # "    image: grafana/grafana",
-        # f"    container_name: {grafana_name}",
-        # "    ports:",
-        # f'      - "{grafana_port}:3000"',
-        # "    depends_on:",
-        # "      - prometheus",
-        # "    networks:",
-        # f"      - {network_name}",
-        # "",
         "networks:",
         f"  Shared_net:",
-        f"    external: true"
+        f"    external: true",
+  preload_block
 
     ]
 

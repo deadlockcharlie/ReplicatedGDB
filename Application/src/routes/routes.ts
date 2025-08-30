@@ -110,3 +110,52 @@ export async function deleteEdge(req, res) {
     res.status(500).json(`Error deleting edge ${err}`);
   }
 }
+
+export async function setVertexProperty(req, res) {
+  try {
+    const { id, key, value } = req.body;
+    await graph.setVertexProperty(id, key, value, false);
+    logger.info(`Vertex property set: ${JSON.stringify({ id, key, value })}`);
+    res.status(200).json({ id, key, value });
+  } catch (err) {
+    logger.error(`Error setting vertex property ${err}`);
+    res.status(500).json(`Error setting vertex property ${err}`);
+  }
+}
+
+export async function setEdgeProperty(req, res) {
+  try {
+    const { id, key, value } = req.body;
+    await graph.setEdgeProperty(id, key, value, false);
+    logger.info(`Edge property set: ${JSON.stringify({ id, key, value })}`);
+    res.status(200).json({ id, key, value });
+  } catch (err) {
+    logger.error(`Error setting edge property ${err}`);
+    res.status(500).json(`Error setting edge property ${err}`);
+  }
+}
+
+export async function removeVertexProperty(req, res) {
+  try {
+    const { id, key } = req.body;
+    await graph.removeVertexProperty(id, key, false);
+    logger.info(`Vertex property removed: ${JSON.stringify({ id, key })}`);
+    res.status(200).json({ id, key });
+  } catch (err) {
+    logger.error(`Error removing vertex property ${err}`);
+    res.status(500).json(`Error removing vertex property ${err}`);
+  }
+}
+
+export async function removeEdgeProperty(req, res) {
+  try {
+    const { id, key } = req.body;
+    await graph.removeEdgeProperty(id, key, false);
+    logger.info(`Edge property removed: ${JSON.stringify({ id, key })}`);
+    res.status(200).json({ id, key });
+  } catch (err) {
+    logger.error(`Error removing edge property ${err}`);
+    res.status(500).json(`Error removing edge property ${err}`);
+  }
+}
+

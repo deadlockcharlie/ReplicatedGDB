@@ -9,6 +9,8 @@ error_log.txt
 dist/
 Dockerfiles/docker-compose.*.yml
 scratch
+import
+GraphData
 # Environment variables
 .env
 .env.local

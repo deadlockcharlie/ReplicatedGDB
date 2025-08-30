@@ -77,6 +77,10 @@ import {
   deleteVertexSchema,
   EdgeSchema,
   deleteEdgeSchema,
+  setVertexPropertySchema,
+  setEdgePropertySchema,
+  removeVertexPropertySchema,
+  removeEdgePropertySchema
 } from "./schemas/requests";
 
 //Setup application routes
@@ -87,6 +91,10 @@ import {
   deleteVertex,
   addEdge,
   deleteEdge,
+  setVertexProperty,
+  setEdgeProperty,
+  removeVertexProperty,
+  removeEdgeProperty
 } from "./routes/routes";
 import { final } from "stream-chain";
 
@@ -163,6 +171,74 @@ import { final } from "stream-chain";
         res.status(500).json("Malformed request.");
       } else {
         await deleteEdge(req, res);
+      }
+    }
+  );
+
+  app.post("/api/setVertexProperty",
+    checkSchema(setVertexPropertySchema, ["body"]),
+    async (req, res) => {
+      const validation = validationResult(req);
+      if (!validation.isEmpty()) {
+        logger.error(
+          `Set Vertex Property Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
+        );
+        res.status(500).json("Malformed request.");
+      } else {
+        await setVertexProperty(req, res);
+      }
+    }
+  );
+
+  app.post("/api/setEdgeProperty",
+    checkSchema(setEdgePropertySchema, ["body"]),
+    async (req, res) => {
+      const validation = validationResult(req);
+      if (!validation.isEmpty()) {
+        logger.error(
+          `Set Edge Property Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
+        );
+        res.status(500).json("Malformed request.");
+      } else {
+        await setEdgeProperty(req, res);
+      }
+    }
+  );
+
+  app.post("/api/removeVertexProperty",
+    checkSchema(removeVertexPropertySchema, ["body"]),
+    async (req, res) => {
+      const validation = validationResult(req);
+      if (!validation.isEmpty()) {
+        logger.error(
+          `Remove Vertex Property Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
+        );
+        res.status(500).json("Malformed request.");
+      } else {
+        await removeVertexProperty(req, res);
+      }
+    }
+  );
+
+  app.post("/api/removeEdgeProperty",
+    checkSchema(removeEdgePropertySchema, ["body"]),
+    async (req, res) => {
+      const validation = validationResult(req);
+      if (!validation.isEmpty()) {
+        logger.error(
+          `Remove Edge Property Malformed request rejected: ${JSON.stringify(
+            validation.array()
+          )}`
+        );
+        res.status(500).json("Malformed request.");
+      } else {
+        await removeEdgeProperty(req, res);
       }
     }
   );
@@ -247,124 +323,103 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
-const fs = require("fs");
-const { chain } = require("stream-chain");
-const { parser } = require("stream-json");
-const { pick } = require("stream-json/filters/Pick");
-const { streamArray } = require("stream-json/streamers/StreamArray");
-const { once } = require("events");
+// const fs = require("fs");
+// const { chain } = require("stream-chain");
+// const { parser } = require("stream-json");
+// const { pick } = require("stream-json/filters/Pick");
+// const { streamArray } = require("stream-json/streamers/StreamArray");
+// const { once } = require("events");
 
 async function onListening() {
   // If the middleware crashes and restarts, it needs to reinitialise the database.
-  let path = process.env.PRELOAD_PATH;
-  let BATCH_SIZE = 1000;
-  if (checkFile(path)) {
-    try {
-      let vertexFut: Promise<any>[] = [];
-      let edgeFut = [];
-      // Load vertices from the file into YJS document
+  // let path = process.env.PRELOAD_PATH;
+  // let BATCH_SIZE = 1000;
+  // if (checkFile(path)) {
+  //   try {
+  //     let vertexFut: Promise<any>[] = [];
+  //     let edgeFut = [];
+  //     // Load vertices from the file into YJS document
 
-      const vertexPipeline = chain([
-        fs.createReadStream(path),
-        parser(),
-        pick({ filter: "vertices" }),
-        streamArray(),
-      ]);
+  //     const vertexPipeline = chain([
+  //       fs.createReadStream(path),
+  //       parser(),
+  //       pick({ filter: "vertices" }),
+  //       streamArray(),
+  //     ]);
 
-      vertexPipeline.on("data", async ({ value }) => {
-        value.id = value._id.toString();
-        // logger.info(JSON.stringify(value));
+  //     vertexPipeline.on("data", async ({ value }) => {
+  //       value.id = value._id.toString();
+  //       // logger.info(JSON.stringify(value));
+  //       vertexFut.push(
+  //         graph.addVertex(["vertex"], value, false).catch((err) => {
+  //           console.error("Vertex insert failed:", err);
+  //         })
+  //       );
+  //     });
 
-        vertexFut.push(
-          graph.addVertex(["vertex"], value, false).catch((err) => {
-            console.error("Vertex insert failed:", err);
-          })
-        );
-        if (vertexFut.length >= BATCH_SIZE) {
-          vertexPipeline.pause();
-          await Promise.all(vertexFut)
-            .then(() => {
-              vertexFut = [];
-              vertexPipeline.resume();
-            })
-            .catch((err) => {
-              console.error("Batch failed:", err);
-              vertexFut = [];
-              vertexPipeline.resume();
-            });
-        }
-      });
-
-      // Wait for final batch at the end of the stream
-      await vertexPipeline.on("end", async () => {
-        if (vertexFut.length > 0) {
-          await Promise.all(vertexFut);
-        }
-        logger.info("✅ All vertices inserted");
+  //     // Wait for final batch at the end of the stream
+  //     await vertexPipeline.on("end", async () => {
+  //       if (vertexFut.length > 0) {
+  //         await Promise.all(vertexFut);
+  //       }
+  //       logger.info("✅ All vertices inserted");
 
         
-        const edgePipeline = chain([
-          fs.createReadStream(path),
-          parser(),
-          pick({ filter: "edges" }),
-          streamArray(),
-        ]);
+  //       const edgePipeline = chain([
+  //         fs.createReadStream(path),
+  //         parser(),
+  //         pick({ filter: "edges" }),
+  //         streamArray(),
+  //       ]);
 
-        edgePipeline.on("data", async ({ value }) => {
-          value.id = value._id.toString();
-          edgeFut.push(
-            graph.addEdge(
-              ["edge"],
-              ["vertex"],
-              "id",
-              value._outV.toString(),
-              ["vertex"],
-              "id",
-              value._inV.toString(),
-              value,
-              false
-            )
-          );
-          if (edgeFut.length >= BATCH_SIZE) {
-            edgePipeline.pause();
-            await Promise.all(edgeFut)
-              .then(() => {
-                edgeFut = [];
-                edgePipeline.resume();
-              })
-              .catch((err) => {
-                console.error("Batch failed:", err);
-                vertexFut = [];
-                edgePipeline.resume();
-              });
-          }
-        });
-          await once(edgePipeline, "end");
-        await Promise.all(edgeFut);
-        logger.info("✅ All edges inserted");
+  //       edgePipeline.on("data", async ({ value }) => {
+  //         value.id = value._id.toString();
+  //         edgeFut.push(
+  //           graph.addEdge(
+  //             ["edge"],
+  //             ["vertex"],
+  //             "id",
+  //             value._outV.toString(),
+  //             ["vertex"],
+  //             "id",
+  //             value._inV.toString(),
+  //             value,
+  //             false
+  //           )
+  //         );
+          
+  //       });
+  //       await once(edgePipeline, "end");
+  //       await Promise.all(edgeFut);
+  //       // logger.info("✅ All edges inserted");
+  //       // for (let index = 1; index < 2000; index++) {
+  //       //   const element = graph.GEdges.get(index.toString());
+  //       //   logger.info(JSON.stringify(element));
+          
+  //       // }
 
-      });
+  //     });
 
 
 
 
-    } catch (e) {
-      logger.error("Exception when loading data from a file " + e);
-    }
-  }
+  //   } catch (e) {
+  //     logger.error("Exception when loading data from a file " + e);
+  //   }
+  // }
 
   var addr = server.address();
   var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   logger.debug("Listening on " + bind);
 }
 
-async function checkFile(path) {
-  try {
-    await fs.access(path); // checks if readable
-    console.log("File exists");
-    return true;
-  } catch (err) {
-    console.log("File does not exist");
-    return false;
-  }
-}
+// async function checkFile(path) {
+//   try {
+//     await fs.access(path); // checks if readable
+//     console.log("File exists");
+//     return true;
+//   } catch (err) {
+//     console.log("File does not exist");
+//     return false;
+//   }
+// }

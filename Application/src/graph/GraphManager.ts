@@ -24,5 +24,8 @@ export class Graph{
             edgeArr?.splice(index, 1);
         }
     }
+    // public setVertexProperty(id: string, key:string, value:string){
+    //     const 
+    // }
 
 }

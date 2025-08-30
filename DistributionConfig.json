@@ -6,7 +6,7 @@
   "base_grafana_port": 5000,
   "provider_port": 1234,
   "provider": true,
-  "preload_data_path":"/Users/pandey/work/GraphDBData/yeast.json",
+  "preload_data":true,
   "dbs" : [
     {
       "database": "neo4j", 

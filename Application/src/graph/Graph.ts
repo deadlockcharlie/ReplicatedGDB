@@ -3,8 +3,9 @@
 //pre condition that source and target are edges
 
 import * as Y from "yjs";
-import {driver} from "../app";
-import {logger} from "../helpers/logging";
+import { driver } from "../app";
+import { logger } from "../helpers/logging";
+import { ProfiledPlan } from "neo4j-driver";
 export type EdgeInformation = {
   id: string;
   relationType: [string];
@@ -14,13 +15,16 @@ export type EdgeInformation = {
   targetLabel: [string];
   targetPropName: string;
   targetPropValue: any;
-  properties: { [key: string]: any };
+  properties: Y.Map<Properties>;
 };
+
+
+export type Properties = {[key: string]: string};
 
 export type VertexInformation = {
   id: string;
   labels: [string];
-  properties: { [key: string]: Y.Map<VertexInformation> };
+  properties: Properties;
 };
 
 // export type Listener = {
@@ -44,34 +48,32 @@ export class Vertex_Edge {
     this.setupObservers();
   }
 
-
-  public async getGraph()
-  {
+  public async getGraph() {
     const result = await driver.getGraph();
     return result;
   }
 
-  
   public async addVertex(
     labels: [string],
-    properties: { [key: string]: any },
+    properties: Properties,
     remote: boolean,
+    preload = false
   ) {
     const existingVertex = this.GVertices.get(properties.id);
     // Prevent duplicate entries if not remote
     if (existingVertex && !remote) {
-      throw new Error(
-        `Vertex with id "${properties.id}" already exists`
-      );
+      throw new Error(`Vertex with id "${properties.id}" already exists`);
     }
     // Update the database
-    await driver.addVertex(labels, properties);
+    if (!preload) {
+      await driver.addVertex(labels, properties);
+    }
     // Only update local structures if not a remote sync
     if (!remote) {
       const vertex: VertexInformation = {
         id: properties.id,
         labels,
-        properties,
+        properties: properties,
       };
 
       this.GVertices.set(properties.id, vertex);
@@ -84,24 +86,24 @@ export class Vertex_Edge {
     properties: Record<string, any>,
     remote: boolean
   ) {
-    try{
-    const id = properties.id;
-    // update the database
-    await driver.deleteVertex(labels, id);
+    try {
+      const id = properties.id;
+      // update the database
+      await driver.deleteVertex(id);
 
-    const exists = this.GVertices.get(id);
+      const exists = this.GVertices.get(id);
 
-    if (!exists && !remote) {
-      throw new Error(`Vertex with id "${id}" does not exist`);
+      if (!exists && !remote) {
+        throw new Error(`Vertex with id "${id}" does not exist`);
+      }
+      if (!remote) {
+        // vertex and associated link data
+        this.GVertices.delete(id);
+        // this.listener.deleteVertex(id);
+      }
+    } catch (err) {
+      throw err;
     }
-    if (!remote) {
-      // vertex and associated link data
-      this.GVertices.delete(id);
-      // this.listener.deleteVertex(id);
-    }
-  } catch(err){
-    throw err;
-  }
   }
 
   public async addEdge(
@@ -113,32 +115,41 @@ export class Vertex_Edge {
     targetPropName: string,
     targetPropValue: string,
     properties: { [key: string]: any },
-    remote: boolean
+    remote: boolean,
+    preload = false
   ) {
     const edgeId = properties.id;
-    if (this.GVertices.get(sourcePropValue) == undefined || this.GVertices.get(targetPropValue) == undefined) {
-      throw new Error("Source and/or target vertex do not exist. Edge: "+ sourcePropValue +" "+ targetPropValue );
+    if (
+      this.GVertices.get(sourcePropValue) == undefined ||
+      this.GVertices.get(targetPropValue) == undefined
+    ) {
+      throw new Error(
+        "Source and/or target vertex do not exist. Edge: " +
+          sourcePropValue +
+          " " +
+          targetPropValue
+      );
     }
     const existingEdge = this.GEdges.get(edgeId);
-    
+
     //Dont allow duplicates if we are not remote
     if (existingEdge && !remote) {
       logger.error(JSON.stringify(existingEdge));
       throw new Error(`Edge with id "${edgeId}" already exists`);
     }
-    
 
-    await driver.addEdge(
-      relationType,
-      sourceLabel,
-      sourcePropName,
-      sourcePropValue,
-      targetLabel,
-      targetPropName,
-      targetPropValue,
-      properties
-    );
-  
+    if (!preload) {
+      await driver.addEdge(
+        relationType,
+        sourceLabel,
+        sourcePropName,
+        sourcePropValue,
+        targetLabel,
+        targetPropName,
+        targetPropValue,
+        properties
+      );
+    }
 
     //adding it the yjs list
     const edge: EdgeInformation = {
@@ -149,7 +160,7 @@ export class Vertex_Edge {
       targetLabel,
       targetPropName,
       targetPropValue,
-      properties,
+      properties: new Y.Map(Object.entries(properties)),
       relationType,
     };
 
@@ -167,16 +178,14 @@ export class Vertex_Edge {
     // Ensure the a unique id is provided
 
     if (!properties.id || !relationType) {
-      throw new Error(
-        "id and relation type is required to delete an edge"
-      );
+      throw new Error("id and relation type is required to delete an edge");
     }
     const edge = this.GEdges.get(properties.id);
 
     if (edge == undefined && !remote) {
       throw new Error("Edge with this id does not exist");
     } else {
-      await driver.deleteEdge(relationType, properties, remote);
+      await driver.deleteEdge(properties);
       if (!remote) {
         if (edge == undefined) {
           throw Error("Undefined Edge");
@@ -187,23 +196,95 @@ export class Vertex_Edge {
     }
   }
 
-  private setupObservers() {
+  public async setVertexProperty(
+    vid: string,
+    key: string,
+    value: string,
+    remote: boolean
+  ) {
+    const vertex = this.GVertices.get(vid);
+    if (vertex == undefined && !remote) {
+      throw new Error("Vertex with id " + vid + " does not exist");
+    } else {
+      await driver.setVertexProperty(vid, key, value);
+      if(!remote){
+        vertex.properties[key]= value;
+        this.GVertices.set(vid, vertex);
+      }
+    }
+  }
 
+  public async setEdgeProperty(
+    eid: string,
+    key: string,
+    value: string,
+    remote: boolean
+  ) {
+    const edge = this.GEdges.get(eid);
+    if (edge == undefined && !remote) {
+      throw new Error("Edge with id " + eid + " does not exist");
+    } else {
+      await driver.setEdgeProperty(eid, key, value);
+      if(!remote){
+        edge.properties[key]= value;
+        this.GEdges.set(eid, edge);
+      }
+    }
+  }
+
+  public async removeVertexProperty(
+    vid: string,
+    key: string,
+    remote: boolean
+  ) {
+    const vertex = this.GVertices.get(vid);
+    if (vertex == undefined && !remote) {
+      throw new Error("Vertex with id " + vid + " does not exist");
+    } else {
+      await driver.removeVertexProperty(vid, key);
+      if(!remote){
+        delete vertex.properties[key];
+        this.GVertices.set(vid, vertex);
+      }
+    }
+  }
+
+  public async removeEdgeProperty(
+    eid: string,
+    key: string,
+    remote: boolean
+  ) {
+    const edge = this.GEdges.get(eid);
+    if (edge == undefined && !remote) {
+      throw new Error("Edge with id " + eid + " does not exist");
+    } else {
+      await driver.removeEdgeProperty(eid, key);
+      if(!remote){
+        delete edge.properties[key];
+        this.GEdges.set(eid, edge);
+      }
+    }
+  }
+
+
+
+
+  private setupObservers() {
     this.GVertices.observe((event, transaction) => {
       if (!transaction.local) {
         event.changes.keys.forEach((change, key) => {
           if (change.action === "add") {
-            logger.info("Remote update observed "+ (transaction));
+            logger.info("Remote update observed " + transaction);
             const vertex = this.GVertices.get(key);
             if (vertex) {
               this.addVertex(vertex.labels, vertex.properties, true).catch(
-                console.error
+                logger.error
               );
             }
           } else if (change.action === "delete" && !transaction) {
             const oldValue = change.oldValue as VertexInformation;
             this.removeVertex(oldValue.labels, oldValue.properties, true).catch(
-              console.error
+              logger.error
             );
           }
         });

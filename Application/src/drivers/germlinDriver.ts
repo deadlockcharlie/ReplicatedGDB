@@ -5,6 +5,7 @@ import { logger } from "../helpers/logging";
 import { WebSocket } from "ws";
 
 export class GremlinDriver extends DatabaseDriver {
+  
   driver;
   constructor() {
     super();
@@ -56,7 +57,7 @@ export class GremlinDriver extends DatabaseDriver {
     }
   }
 
-  deleteVertex(_label, id) {
+  deleteVertex(id) {
     try {
       (async () => {
         await this.driver
@@ -108,7 +109,7 @@ export class GremlinDriver extends DatabaseDriver {
     }
   }
 
-  deleteEdge(relationLabels: [string], properties: any, remote: boolean) {
+  deleteEdge(properties: any) {
     try {
       (async () => {
         this.driver
@@ -120,6 +121,65 @@ export class GremlinDriver extends DatabaseDriver {
     } catch (err) {
       logger.error("deleteEdge: " + err);
       throw new err();
+    }
+  }
+
+  async setVertexProperty(vid: string, key: string, value: string) {
+    try {
+      logger.info(`Setting vertex property: ${key}=${value} for vertex ID: ${vid}`);
+      const result = await this.driver
+        .V(vid)
+        .property(key, value)
+        .next();
+      logger.info(`Property set successfully: ${result}`);
+      return result;
+    } catch (err) {
+      logger.error(`setVertexProperty: ${err}`);
+      throw err;
+    }
+  }
+  async setEdgeProperty(eid: string, key: string, value: string) {
+    try {
+      logger.info(`Setting edge property: ${key}=${value} for edge ID: ${eid}`);
+      const result = await this.driver
+        .E(eid)
+        .property(key, value)
+        .next();
+      logger.info(`Property set successfully: ${result}`);
+      return result;
+    } catch (err) {
+      logger.error(`setEdgeProperty: ${err}`);
+      throw err;
+    }
+  }
+  async removeVertexProperty(vid: string, key: string) {
+    try {
+      logger.info(`Removing vertex property: ${key} for vertex ID: ${vid}`);
+      const result = await this.driver
+      .V(vid)
+      .properties(key)
+      .drop()
+      .next();
+      logger.info(`Property removed successfully: ${result}`);
+      return result;
+    } catch (err) {
+      logger.error(`removeVertexProperty: ${err}`);
+      throw err;
+    }
+  }
+  async removeEdgeProperty(eid: string, key: string) {
+    try {
+      logger.info(`Removing edge property: ${key} for edge ID: ${eid}`);
+      const result = await this.driver
+      .E(eid)
+      .properties(key)
+      .drop()
+      .next();
+      logger.info(`Property removed successfully: ${result}`);
+      return result;
+    } catch (err) {
+      logger.error(`removeEdgeProperty: ${err}`);
+      throw err;
     }
   }
 }

@@ -13,6 +13,13 @@ export abstract class DatabaseDriver {
     targetPropValue: any,
     properties: { [key: string]: any }
   );
-  abstract deleteVertex(labels: [string], id: string);
-  abstract deleteEdge(relationLabels: [string], properties: any, remote: boolean);
+  abstract deleteVertex(id: string);
+  abstract deleteEdge(properties: any, remote: boolean);
+
+  abstract setVertexProperty(vid: string, key: string, value: string)
+  abstract setEdgeProperty(eid: string, key: string, value: string)
+
+  abstract removeVertexProperty(vid: string, key: string)
+  abstract removeEdgeProperty(eid: string, key: string)
+
 }

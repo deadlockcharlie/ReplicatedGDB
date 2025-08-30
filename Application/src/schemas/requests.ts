@@ -36,3 +36,25 @@ export const deleteEdgeSchema = {
     notEmpty: true,
   },
 }
+
+export const setVertexPropertySchema = {
+    id: { notEmpty: true },
+    key: { notEmpty: true },
+    value: { notEmpty: true },
+}
+
+export const setEdgePropertySchema = {
+    id: { notEmpty: true },
+    key: { notEmpty: true },
+    value: { notEmpty: true },
+}
+
+export const removeVertexPropertySchema = {
+    id: { notEmpty: true },
+    key: { notEmpty: true },
+}
+
+export const removeEdgePropertySchema = {
+    id: { notEmpty: true },
+    key: { notEmpty: true },
+}
