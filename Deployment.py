@@ -11,6 +11,7 @@ import threading
 
 VERBOSE = False
 BENCHMARK = False
+PATH ="DistributionConfig.json"
 
 def spinner(stop_event):
     spinner_chars = ['|', '/', '-', '\\']
@@ -52,8 +53,8 @@ def run_command(cmd):
     return rc
     
 
-def load_config(path="DistributionConfig.json"):
-    with open(path, "r") as f:
+def load_config():
+    with open(PATH, "r") as f:
         return json.load(f)
       
 def network_create(external_network_instances):
@@ -423,12 +424,15 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=["generate","up", "down", "force-clean","rebuild"], help="Deployment Actions.")
+    parser.add_argument("distconf", help="Distribution configuration file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show full output when deploying.")
+    
     # parser.add_argument("-b", "--benchmark", action="store_true", help="Preload the database with snapshot data.")
     args = parser.parse_args()
 
     VERBOSE = args.verbose 
     command = args.command
+    PATH= args.distconf
 
     # BENCHMARK = args.benchmark
     
