@@ -6,13 +6,13 @@
   "base_grafana_port": 5000,
   "provider_port": 1234,
   "provider": true,
-  "preload_data":true,
+  "preload_data": false,
   "dbs" : [
     {
-      "database": "neo4j", 
+      "database": "memgraph", 
       "password": "verysecretpassword",
       "user": "pandey",
-      "app_log_level": "info"
+      "app_log_level": "error"
     }
   ]
 }

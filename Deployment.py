@@ -137,16 +137,24 @@ def generate_compose_file(i, db_conf, config):
     prometheus_name = f"Prometheus{i+1}"
     grafana_name = f"Grafana{i+1}"
     network_name = f"Grace_net_{i+1}"
-    
-    global BENCHMARK
-    mount=""
-    if BENCHMARK:
-      mount= (f"""
-          volumes:
-            - ../scratch/data:/data
-            - ../scratch/plugins:/plugins"
-      """)
 
+    
+    preload_block = ""
+    volume_block= ""
+    envPreload=False
+    if "preload_data" in config and config["preload_data"]==True :
+      envPreload = True
+      preload_block = dedent(f"""
+      volumes:
+        neo4j_data:
+          external: true
+                     """).strip("\n")
+      volume_block = dedent(f"""
+      volumes:
+        - neo4j_data:/data""").strip("\n")
+    elif config["preload_data"] !=True and config["preload_data"] != False:
+      print("preload_data specified with incorrect parameter. Expecting true or false. Exiting")
+      sys.exit(0)
 
     if database == "neo4j":
         db_url = f"bolt://{db_name}:7687"
@@ -154,14 +162,17 @@ def generate_compose_file(i, db_conf, config):
         {db_name}:
           image: neo4j:4.4.24
           container_name: {db_name}
-          {mount}
           ports:
             - "{website_port}:7474"
             - "{protocol_port}:7687"
           environment:
             NEO4JLABS_PLUGINS: '["apoc", "graph-data-science"]'
-            ulimit nofile: 40000:40000
             NEO4J_AUTH: none
+          ulimits:
+            nofile:
+              soft: 40000
+              hard: 40000
+            
           healthcheck:
             test: [ "CMD", "bash", "-c", "cypher-shell -u neo4j -p {password} 'RETURN 1'" ]
             interval: 10s
@@ -169,12 +180,11 @@ def generate_compose_file(i, db_conf, config):
             retries: 10
           networks:
             - Shared_net
-          volumes:
-            - neo4j_data:/data
+          {volume_block}
 
         """).strip("\n")
     elif database == "memgraph":  # memgraph
-        db_url = f"bolt://{db_name}:{protocol_port}"
+        db_url = f"bolt://{db_name}:7687"
         databaseService = dedent(f"""
         {db_name}:
           image: memgraph/memgraph:latest
@@ -236,22 +246,10 @@ def generate_compose_file(i, db_conf, config):
 
 
     
-
-    # indent to exact nesting levels
+# indent to exact nesting levels
     databaseService_block = indent(databaseService, "  ")  # under `services:`
     environment_block = indent(environment, "      ")    # under `environment:`
-    preload_block = ""
-    envPreload=False
-    if "preload_data" in config and config["preload_data"]==True :
-      envPreload = True
-      preload_block = dedent(f"""
-      volumes:
-        neo4j_data:
-          external: true
-                     """).strip("\n")
-    elif config["preload_data"] !="true" or config["preload_data"] != "false":
-      print("preload_data specified with incorrect parameter. Expecting true or false. Exiting")
-      sys.exit(0)
+    
 
 
     lines = [

@@ -82,12 +82,10 @@ export class Vertex_Edge {
   }
 
   public async removeVertex(
-    labels: [string],
-    properties: Record<string, any>,
+    id:string,
     remote: boolean
   ) {
     try {
-      const id = properties.id;
       // update the database
       await driver.deleteVertex(id);
 
@@ -171,27 +169,22 @@ export class Vertex_Edge {
   }
 
   public async removeEdge(
-    relationType: [string],
-    properties: any,
+    id: string,
     remote: boolean
   ) {
-    // Ensure the a unique id is provided
 
-    if (!properties.id || !relationType) {
-      throw new Error("id and relation type is required to delete an edge");
-    }
-    const edge = this.GEdges.get(properties.id);
+    const edge = this.GEdges.get(id);
 
     if (edge == undefined && !remote) {
       throw new Error("Edge with this id does not exist");
     } else {
-      await driver.deleteEdge(properties);
+      await driver.deleteEdge(id);
       if (!remote) {
         if (edge == undefined) {
           throw Error("Undefined Edge");
         }
         // this.listener.deleteEdge(edge.id, edge);
-        this.GEdges.delete(properties.id);
+        this.GEdges.delete(id);
       }
     }
   }
@@ -283,7 +276,7 @@ export class Vertex_Edge {
             }
           } else if (change.action === "delete" && !transaction) {
             const oldValue = change.oldValue as VertexInformation;
-            this.removeVertex(oldValue.labels, oldValue.properties, true).catch(
+            this.removeVertex(oldValue.properties.id, true).catch(
               logger.error
             );
           }
@@ -312,8 +305,7 @@ export class Vertex_Edge {
           } else if (change.action === "delete") {
             const oldValue = change.oldValue as EdgeInformation;
             this.removeEdge(
-              oldValue.relationType,
-              oldValue.properties,
+              oldValue.id,
               true
             ).catch(console.error);
           }

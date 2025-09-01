@@ -126,10 +126,10 @@ export class Neo4jDriver extends DatabaseDriver {
     }
   }
 
-  async deleteEdge(properties: any) {
-    const query = `MATCH ()-[r {id: $properties.id}]-() DELETE r`;
+  async deleteEdge(id: string) {
+    const query = `MATCH ()-[r {id: $id}]-() DELETE r`;
     const params = {
-      properties: properties,
+      id: id,
     };
     try {
       await this.driver.executeQuery(query, params);

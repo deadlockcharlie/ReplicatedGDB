@@ -88,7 +88,7 @@ export async function deleteVertex(req, res) {
   try {
     const label = req.body.label; // you can pass label via query
     const properties = req.body.properties;
-    await graph.removeVertex(label, properties, false);
+    await graph.removeVertex(properties, false);
     logger.info(`Vertex deleted: ${JSON.stringify({label:label, properties:properties})}`);
     res.status(200).json({label:label, properties:properties});
   } catch (err) {
@@ -99,12 +99,11 @@ export async function deleteVertex(req, res) {
 
 export async function deleteEdge(req, res) {
   try {
-    const relationType = req.body.relationType;
-    const properties = req.body.properties;
+    const id = req.body.id;
 
-    await graph.removeEdge(relationType, properties, false);
-    logger.info(`Edge deleted: ${JSON.stringify({relationType:relationType, properties:properties})}`);
-    res.status(200).json({relationType:relationType, properties:properties});
+    await graph.removeEdge(id, false);
+    logger.info(`Edge deleted: ${JSON.stringify({id:id})}`);
+    res.status(200).json({id:id});
   } catch (err) {
     logger.error(`Error deleting edge ${err}`);
     res.status(500).json(`Error deleting edge ${err}`);

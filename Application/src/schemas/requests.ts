@@ -22,20 +22,12 @@ export const EdgeSchema = {
 };
 
 export const deleteVertexSchema = {
-  label: {
-    notEmpty: true,
-  },
-  "properties.id": {
-    notEmpty: true,
-  },
+  id: { notEmpty: true },
 };
 
 export const deleteEdgeSchema = {
-    relationType: { notEmpty: true },
-  "properties.id": {
-    notEmpty: true,
-  },
-}
+  id: { notEmpty: true },
+};
 
 export const setVertexPropertySchema = {
     id: { notEmpty: true },
