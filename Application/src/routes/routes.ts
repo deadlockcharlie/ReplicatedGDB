@@ -86,11 +86,10 @@ export async function addEdge(req, res) {
 
 export async function deleteVertex(req, res) {
   try {
-    const label = req.body.label; // you can pass label via query
-    const properties = req.body.properties;
-    await graph.removeVertex(properties, false);
-    logger.info(`Vertex deleted: ${JSON.stringify({label:label, properties:properties})}`);
-    res.status(200).json({label:label, properties:properties});
+    const id = req.body.id; // you can pass label via query
+    await graph.removeVertex(id, false);
+    logger.info(`Vertex deleted: ${JSON.stringify({id:id})}`);
+    res.status(200).json({id:id});
   } catch (err) {
     logger.error(`Error removing vertex ${err}`);
     res.status(500).json(`Error removing vertex ${err}`);

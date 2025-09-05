@@ -45,6 +45,8 @@ new WebsocketProvider(
 // Setup Database
 import { Neo4jDriver } from "./drivers/neo4jDriver";
 import { GremlinDriver } from "./drivers/germlinDriver";
+import { MemGraphDriver } from "./drivers/memgraphDriver";
+import {ArangoDBDriver } from "./drivers/ArangoDBDriver";
 
 // logger.info(`environment: ${JSON.stringify(process.env)}`);
 const dbname = process.env.DATABASE;
@@ -53,10 +55,13 @@ export var driver;
 switch (dbname) {
   case "NEO4J":
   case "MEMGRAPH":
-    driver = new Neo4jDriver();
+    driver = new MemGraphDriver();
     break;
   case "JANUSGRAPH":
     driver = new GremlinDriver();
+    break;
+  case "ARANGODB":
+    driver = new ArangoDBDriver();
     break;
   default:
     logger.error(

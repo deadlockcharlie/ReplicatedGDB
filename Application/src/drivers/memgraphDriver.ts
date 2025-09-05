@@ -3,7 +3,7 @@ import { DatabaseDriver } from "./driver";
 import neo4j from "neo4j-driver";
 import {graph} from "../app";
 
-export class Neo4jDriver extends DatabaseDriver {
+export class MemGraphDriver extends DatabaseDriver {
   
 
   driver;
