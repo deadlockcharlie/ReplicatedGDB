@@ -72,16 +72,11 @@ export class ArangoDBDriver extends DatabaseDriver {
   }
 
   async getGraph(){
-    const query = `MATCH (n) RETURN n LIMIT 50`;
-    const params = null;
+    const result = await this.driver.query(aql`FOR v IN vertices LIMIT 50 RETURN v`);
+    const data = await result.all();
+    // logger.info(JSON.stringify(result));
+    return data;
 
-    try{
-      const result = await this.driver.executeQuery(query);
-      return result;
-    } catch(err){
-      logger.error(err);
-      throw err;
-    }
   }
 
   async addVertex(labels, properties) {
