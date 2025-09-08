@@ -7,8 +7,8 @@ import subprocess
 SHARED_NET = "Shared_net"
 
 # Fault timing
-FAULT_DURATION = 5
-COOLDOWN = 30
+FAULT_DURATION = 120
+COOLDOWN = 300000
 
 # Name (or prefix) of your provider container
 PROVIDER_NAME = "Provider"
@@ -39,6 +39,8 @@ def main():
 
         # Pick a random replica
         replica = random.choice(replicas)
+        if(replica=="Grace1"):
+            continue
 
         # Partition replica from shared network
         print(f"🚫 Disconnecting {replica} from {SHARED_NET}")

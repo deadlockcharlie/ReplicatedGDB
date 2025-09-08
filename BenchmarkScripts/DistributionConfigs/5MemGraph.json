@@ -1,0 +1,42 @@
+{
+  "base_website_port": 7474,
+  "base_protocol_port": 7687,
+  "base_app_port": 3000,
+  "base_prometheus_port": 9090,
+  "base_grafana_port": 5000,
+  "provider_port": 1234,
+  "provider": true,
+  "preload_data": false,
+  "dbs" : [
+    {
+      "database": "memgraph", 
+      "password": "verysecretpassword",
+      "user": "pandey",
+      "app_log_level": "error"
+    },
+    {
+      "database": "memgraph", 
+      "password": "verysecretpassword",
+      "user": "pandey",
+      "app_log_level": "error"
+    },
+    {
+      "database": "memgraph", 
+      "password": "verysecretpassword",
+      "user": "pandey",
+      "app_log_level": "error"
+    },
+    {
+      "database": "memgraph", 
+      "password": "verysecretpassword",
+      "user": "pandey",
+      "app_log_level": "error"
+    },
+    {
+      "database": "memgraph", 
+      "password": "verysecretpassword",
+      "user": "pandey",
+      "app_log_level": "error"
+    }
+  ]
+}

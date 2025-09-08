@@ -235,6 +235,59 @@ def generate_compose_file(i, db_conf, config):
           networks:
             - Shared_net
         """).strip("\n")
+
+    elif database == "arangodb":  # arangodb
+        db_url = f"http://{db_name}:7687"
+        databaseService = dedent(f"""
+        {db_name}:
+          image: arangodb:latest
+          container_name: {db_name}
+          environment:
+            ARANGO_NO_AUTH : 1
+          healthcheck:
+            test: ["CMD-SHELL", "arangosh --server.endpoint tcp://127.0.0.1:8529 --server.authentication false --javascript.execute-string 'quit(0)'"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+          ports:
+            - "{protocol_port}:8529"
+          networks:
+            - Shared_net
+        """).strip("\n")
+    elif database == "mongodb":  # mongodb
+        db_url = f"mongodb://{db_name}:27017"
+        databaseService = dedent(f"""
+        {db_name}:
+          image: mongo:8.0.14-rc0
+          container_name: {db_name}
+          ports:
+            - "{protocol_port}:27017"
+          healthcheck:
+            test: echo 'db.runCommand("ping").ok' | mongosh mongodb://{db_name}:27017/ --quiet
+            interval: 10s
+            timeout: 5s
+            retries: 5
+          networks:
+            - Shared_net
+        """).strip("\n")
+    elif database == "nebulagraph":  # nebulagraph
+        db_url = f"http://{db_name}:7687"
+        databaseService = dedent(f"""
+        {db_name}:
+          image: arangodb:latest
+          container_name: {db_name}
+          environment:
+            ARANGO_NO_AUTH : 1
+          healthcheck:
+            test: ["CMD-SHELL", "arangosh --server.endpoint tcp://127.0.0.1:8529 --server.authentication false --javascript.execute-string 'quit(0)'"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+          ports:
+            - "{protocol_port}:8529"
+          networks:
+            - Shared_net
+        """).strip("\n")
     environment = dedent(f"""
     WS_URI: "ws://wsserver:1234"
     DATABASE_URI: {db_url}

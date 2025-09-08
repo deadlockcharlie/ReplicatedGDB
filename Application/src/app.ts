@@ -47,6 +47,7 @@ import { Neo4jDriver } from "./drivers/neo4jDriver";
 import { GremlinDriver } from "./drivers/germlinDriver";
 import { MemGraphDriver } from "./drivers/memgraphDriver";
 import {ArangoDBDriver } from "./drivers/ArangoDBDriver";
+import { MongoDBDriver } from "./drivers/MongoDBDriver";
 
 // logger.info(`environment: ${JSON.stringify(process.env)}`);
 const dbname = process.env.DATABASE;
@@ -63,6 +64,10 @@ switch (dbname) {
   case "ARANGODB":
     driver = new ArangoDBDriver();
     break;
+  case "MONGODB":
+    driver = new MongoDBDriver();
+    break;
+    
   default:
     logger.error(
       "No database specified in configuration. Cannot initialize driver."

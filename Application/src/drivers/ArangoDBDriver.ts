@@ -2,7 +2,6 @@ import { logger } from "../helpers/logging";
 import { DatabaseDriver } from "./driver";
 import {Database, aql} from "arangojs";
 import {graph} from "../app";
-import { EdgeCollection } from "arangojs/collection";
 
 export class ArangoDBDriver extends DatabaseDriver {
   
@@ -26,7 +25,7 @@ export class ArangoDBDriver extends DatabaseDriver {
       }
 
       try{
-      this.vertices = this.driver.collection("vertices") as EdgeCollection;
+      this.vertices = this.driver.collection("vertices");
       this.edges = this.driver.collection("edges");
       if(!await this.vertices.exists()){
         logger.info("creating vertex collection");
