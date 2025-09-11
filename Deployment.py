@@ -237,7 +237,7 @@ def generate_compose_file(i, db_conf, config):
         """).strip("\n")
 
     elif database == "arangodb":  # arangodb
-        db_url = f"http://{db_name}:7687"
+        db_url = f"http://{db_name}:8529"
         databaseService = dedent(f"""
         {db_name}:
           image: arangodb:latest
@@ -270,24 +270,31 @@ def generate_compose_file(i, db_conf, config):
           networks:
             - Shared_net
         """).strip("\n")
-    elif database == "nebulagraph":  # nebulagraph
-        db_url = f"http://{db_name}:7687"
-        databaseService = dedent(f"""
-        {db_name}:
-          image: arangodb:latest
-          container_name: {db_name}
-          environment:
-            ARANGO_NO_AUTH : 1
-          healthcheck:
-            test: ["CMD-SHELL", "arangosh --server.endpoint tcp://127.0.0.1:8529 --server.authentication false --javascript.execute-string 'quit(0)'"]
-            interval: 5s
-            timeout: 5s
-            retries: 5
-          ports:
-            - "{protocol_port}:8529"
-          networks:
-            - Shared_net
-        """).strip("\n")
+    # elif database == "nebulagraph":  # nebulagraph
+    #     db_url = f"http://{db_name}:7687"
+    #     databaseService = dedent(f"""
+    #     {db_name}:
+    #       image: vesoft/nebula-graphd:latest
+    #       container_name: {db_name}
+    #       environment:
+    #         TZ: "UTC"
+    #       healthcheck:
+    #         test: ["CMD-SHELL", "echo 'SHOW HOSTS;' | nebula-console -u root -p nebula --address {db_name} --port 3699 || exit 1"]
+    #         interval: 10s
+    #         timeout: 5s
+    #         retries: 5
+    #       ports:
+    #         - "{protocol_port}:3699"
+    #       networks:
+    #         - Shared_net
+    #     """).strip("\n")  
+    else:
+        print(f"Unsupported database: {database}")
+        sys.exit(1)
+
+
+
+        
     environment = dedent(f"""
     WS_URI: "ws://wsserver:1234"
     DATABASE_URI: {db_url}
@@ -477,7 +484,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=["generate","up", "down", "force-clean","rebuild"], help="Deployment Actions.")
-    parser.add_argument("distconf", help="Distribution configuration file")
+    parser.add_argument("distconf", help="Distribution configuration file", default="DistributionConfig.json", nargs='?')
     parser.add_argument("-v", "--verbose", action="store_true", help="Show full output when deploying.")
     
     # parser.add_argument("-b", "--benchmark", action="store_true", help="Preload the database with snapshot data.")

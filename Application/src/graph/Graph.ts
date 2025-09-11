@@ -132,7 +132,7 @@ export class Vertex_Edge {
 
     //Dont allow duplicates if we are not remote
     if (existingEdge && !remote) {
-      logger.error(JSON.stringify(existingEdge));
+      logger.info(JSON.stringify(existingEdge));
       throw new Error(`Edge with id "${edgeId}" already exists`);
     }
 
