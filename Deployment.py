@@ -167,7 +167,6 @@ def generate_compose_file(i, db_conf, config):
             - "{website_port}:7474"
             - "{protocol_port}:7687"
           environment:
-            NEO4JLABS_PLUGINS: '["apoc", "graph-data-science"]'
             NEO4J_AUTH: none
           ulimits:
             nofile:

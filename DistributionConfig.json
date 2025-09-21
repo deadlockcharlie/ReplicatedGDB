@@ -9,7 +9,7 @@
   "preload_data": false,
   "dbs" : [
     {
-     "database": "arangodb", 
+     "database": "neo4j", 
       "password": "verysecretpassword",
       "user": "pandey",
       "app_log_level": "error"
