@@ -9,10 +9,8 @@ export const VertexSchema = {
 
 
 export const EdgeSchema = {
-  sourceLabel: { notEmpty: true },
   sourcePropName: { notEmpty: true },
   sourcePropValue: { notEmpty: true },
-  targetLabel: { notEmpty: true },
   targetPropName: { notEmpty: true },
   targetPropValue: { notEmpty: true },
   relationType: { notEmpty: true },

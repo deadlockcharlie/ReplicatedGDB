@@ -7,12 +7,10 @@ import { driver } from "../app";
 import { logger } from "../helpers/logging";
 import { ProfiledPlan } from "neo4j-driver";
 export type EdgeInformation = {
-  id: string;
+  id: any;
   relationType: [string];
-  sourceLabel: [string];
   sourcePropName: string;
   sourcePropValue: any;
-  targetLabel: [string];
   targetPropName: string;
   targetPropValue: any;
   properties: Y.Map<Properties>;
@@ -22,7 +20,7 @@ export type EdgeInformation = {
 export type Properties = {[key: string]: string};
 
 export type VertexInformation = {
-  id: string;
+  id: any;
   labels: [string];
   properties: Properties;
 };
@@ -49,7 +47,7 @@ export class Vertex_Edge {
   }
 
   public async getGraph() {
-    const result = await driver.getGraph();
+    const result = {vertices: this.GVertices.size, edges: this.GEdges.size};
     return result;
   }
 
@@ -106,10 +104,8 @@ export class Vertex_Edge {
 
   public async addEdge(
     relationType: [string],
-    sourceLabel: [string],
     sourcePropName: string,
     sourcePropValue: string,
-    targetLabel: [string],
     targetPropName: string,
     targetPropValue: string,
     properties: { [key: string]: any },
@@ -139,10 +135,8 @@ export class Vertex_Edge {
     if (!preload) {
       await driver.addEdge(
         relationType,
-        sourceLabel,
         sourcePropName,
         sourcePropValue,
-        targetLabel,
         targetPropName,
         targetPropValue,
         properties
@@ -152,10 +146,8 @@ export class Vertex_Edge {
     //adding it the yjs list
     const edge: EdgeInformation = {
       id: edgeId,
-      sourceLabel,
       sourcePropName,
       sourcePropValue,
-      targetLabel,
       targetPropName,
       targetPropValue,
       properties: new Y.Map(Object.entries(properties)),
@@ -169,7 +161,7 @@ export class Vertex_Edge {
   }
 
   public async removeEdge(
-    id: string,
+    id: any,
     remote: boolean
   ) {
 
@@ -190,7 +182,7 @@ export class Vertex_Edge {
   }
 
   public async setVertexProperty(
-    vid: string,
+    vid: any,
     key: string,
     value: string,
     remote: boolean
@@ -208,7 +200,7 @@ export class Vertex_Edge {
   }
 
   public async setEdgeProperty(
-    eid: string,
+    eid: any,
     key: string,
     value: string,
     remote: boolean
@@ -226,7 +218,7 @@ export class Vertex_Edge {
   }
 
   public async removeVertexProperty(
-    vid: string,
+    vid: any,
     key: string,
     remote: boolean
   ) {
@@ -243,7 +235,7 @@ export class Vertex_Edge {
   }
 
   public async removeEdgeProperty(
-    eid: string,
+    eid: any,
     key: string,
     remote: boolean
   ) {
@@ -292,10 +284,8 @@ export class Vertex_Edge {
             if (edge) {
               this.addEdge(
                 edge.relationType,
-                edge.sourceLabel,
                 edge.sourcePropName,
                 edge.sourcePropValue,
-                edge.targetLabel,
                 edge.targetPropName,
                 edge.targetPropValue,
                 edge.properties,

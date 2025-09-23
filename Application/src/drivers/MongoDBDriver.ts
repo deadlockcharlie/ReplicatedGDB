@@ -75,18 +75,16 @@ export class MongoDBDriver extends DatabaseDriver {
         }
         
     }
-    addEdge(relationLabels: [string], sourceLabel: [string], sourcePropName: string, sourcePropValue: any, targetLabel: [string], targetPropName: string, targetPropValue: any, properties: { [key: string]: any; }) {
+    addEdge(relationLabels: [string],  sourcePropName: string, sourcePropValue: any, targetPropName: string, targetPropValue: any, properties: { [key: string]: any; }) {
         try{
             const collection = this.driver.db('grace').collection('edges');
             const result = collection.insertOne({
                 relationLabels: relationLabels,
                 source: {
-                    label: sourceLabel,
                     propName: sourcePropName,
                     propValue: sourcePropValue
                 },
                 target: {
-                    label: targetLabel,
                     propName: targetPropName,
                     propValue: targetPropValue
                 },

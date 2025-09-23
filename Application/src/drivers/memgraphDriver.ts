@@ -21,33 +21,6 @@ export class MemGraphDriver extends DatabaseDriver {
       logger.info(
         "Connected to the Database."
       );
-      logger.warn("Preload data flag is "+ process.env.PRELOAD);
-      if(process.env.PRELOAD=="True"){
-        logger.info("Materializing data from the db to the middleware");
-        (async () => {
-        const session = this.driver.session();
-
-        for await (const batch of this.streamQuery(session, "MATCH (n) RETURN n")) {
-          for (const record of batch) {
-            const node = record.get("n");
-            // logger.info(JSON.stringify(node));
-            graph.addVertex(node.labels, node.properties, false, true);
-          }
-        }
-        logger.info("✅ All vertices loaded")
-
-        for await (const batch of this.streamQuery(session, "MATCH (a)-[r]->(b) RETURN id(r) as id, id(a) as source, id(b) as target, r")) {
-          for (const record of batch) {
-            const node = record.get("r");
-            // logger.info(JSON.stringify(node));
-            graph.addEdge(["Edge"], ["Vertex"],"id", node.properties.source, ["Vertex"], "id", node.properties.target, node.properties, false, true);
-          }
-        }
-        logger.info("✅ All Edges loaded")
-
-        await session.close();
-      })();
-      }
     })();
   }
 
@@ -91,21 +64,18 @@ export class MemGraphDriver extends DatabaseDriver {
 
   async addEdge(
     relationLabels: [string],
-    sourceLabels: [string],
     sourcePropName: string,
     sourcePropValue: any,
-    targetLabels: [string],
     targetPropName: string,
     targetPropValue: any,
     properties: { [key: string]: any }
   ) {
-     const sourceLabelString = sourceLabels.join(":");
-     const targetLabelString = targetLabels.join(":");
+
      const relationLabelString = relationLabels.join(":");
 
     const query = `
-          MATCH (a:${sourceLabelString} {${sourcePropName}: "${sourcePropValue}"}), 
-                (b:${targetLabelString} {${targetPropName}: "${targetPropValue}"})
+          MATCH (a {${sourcePropName}: "${sourcePropValue}"}), 
+                (b {${targetPropName}: "${targetPropValue}"})
           CREATE (a)-[r:${relationLabelString}]->(b)
           SET r += $properties
           RETURN r;

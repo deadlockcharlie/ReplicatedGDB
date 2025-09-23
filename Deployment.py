@@ -13,6 +13,7 @@ VERBOSE = False
 BENCHMARK = False
 PATH ="DistributionConfig.json"
 
+
 def spinner(stop_event):
     spinner_chars = ['|', '/', '-', '\\']
     idx = 0
@@ -21,8 +22,7 @@ def spinner(stop_event):
         idx += 1
         time.sleep(0.1)
     print('\r', end='')
-
-
+    
 def run_command(cmd):
     global VERBOSE
     if VERBOSE:
@@ -133,6 +133,7 @@ def generate_compose_file(i, db_conf, config):
     db_user = db_conf["user"]
 
     db_name = f"{database}{i+1}"
+    preloadName = f"preload{i+1}"
     app_name = f"app{i+1}"
     grace_name = f"Grace{i+1}"
     prometheus_name = f"Prometheus{i+1}"
@@ -142,21 +143,7 @@ def generate_compose_file(i, db_conf, config):
     
     preload_block = ""
     volume_block= ""
-    envPreload=False
-    if "preload_data" in config and config["preload_data"]==True :
-      envPreload = True
-      preload_block = dedent(f"""
-      volumes:
-        neo4j_data:
-          external: true
-                     """).strip("\n")
-      volume_block = dedent(f"""
-      volumes:
-        - neo4j_data:/data""").strip("\n")
-    elif config["preload_data"] !=True and config["preload_data"] != False:
-      print("preload_data specified with incorrect parameter. Expecting true or false. Exiting")
-      sys.exit(0)
-
+  
     if database == "neo4j":
         db_url = f"bolt://{db_name}:7687"
         databaseService = dedent(f"""
@@ -191,6 +178,8 @@ def generate_compose_file(i, db_conf, config):
           container_name: {db_name}
           command: ["--log-level=TRACE"]
           pull_policy: always
+          volumes:
+            - {PRELOAD_DATA}:/var/lib/memgraph/import
           healthcheck:
             test: ["CMD-SHELL", "echo 'RETURN 0;' | mgconsole || exit 1"]
             interval: 10s
@@ -201,7 +190,21 @@ def generate_compose_file(i, db_conf, config):
             - "{protocol_port}:7687"
           networks:
             - Shared_net
-
+        {preloadName}:
+          image: memgraph/memgraph:latest
+          container_name: preload{i+1}
+          depends_on:
+            {db_name}:
+              condition: service_healthy
+          volumes:
+            - {PRELOAD_DATA}:/var/lib/memgraph/import
+          entrypoint:
+            [
+              "bash", "-c",
+              "mgconsole --host {db_name} --port 7687 < /var/lib/memgraph/import/preloadMemgraph.cypher"
+            ]
+          networks:
+            - Shared_net
         lab{i+1}:
           image: memgraph/lab
           pull_policy: always
@@ -302,6 +305,7 @@ def generate_compose_file(i, db_conf, config):
     USER: {db_user}
     DATABASE: {database.upper()}
     LOG_LEVEL: {app_log_level}
+    IS_PRELOAD_LEADER: {"Yes" if i==0 else "No"}
     """).strip("\n")
 
 
@@ -309,7 +313,10 @@ def generate_compose_file(i, db_conf, config):
 # indent to exact nesting levels
     databaseService_block = indent(databaseService, "  ")  # under `services:`
     environment_block = indent(environment, "      ")    # under `environment:`
-    
+    preloadWaitBlock = dedent(f"""
+    {preloadName}:
+        condition: service_completed_successfully
+        """).strip("\n")
 
 
     lines = [
@@ -326,14 +333,17 @@ def generate_compose_file(i, db_conf, config):
         f'      - "{app_port}:3000"',
         "    environment:",
         environment_block,
-        f"      PRELOAD: {envPreload}",
         "    cap_add:",
         "       - NET_ADMIN",
         "    depends_on:",
         f"      {db_name}:",
         "        condition: service_healthy",
+        f"      {preloadName}:",
+        "         condition: service_completed_successfully",
         "    networks:",
         f"      - Shared_net",
+        "    volumes:",
+        f"      - {PRELOAD_DATA}:/var/lib/grace/import",
         "networks:",
         f"  Shared_net:",
         f"    external: true",
@@ -492,6 +502,7 @@ if __name__ == "__main__":
     VERBOSE = args.verbose 
     command = args.command
     PATH= args.distconf
+    PRELOAD_DATA=os.environ["PRELOAD_DATA"]
 
     # BENCHMARK = args.benchmark
     

@@ -78,10 +78,8 @@ export class GremlinDriver extends DatabaseDriver {
 
   addEdge(
     relationLabels: [string],
-    sourceLabels: [string],
     sourcePropName: string,
     sourcePropValue: any,
-    targetLabels: [string],
     targetPropName: string,
     targetPropValue: any,
     properties: { [key: string]: any }

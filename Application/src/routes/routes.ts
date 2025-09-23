@@ -37,10 +37,8 @@ export async function addEdge(req, res) {
   try {
     const {
       relationType,
-      sourceLabel,
       sourcePropName,
       sourcePropValue,
-      targetLabel,
       targetPropName,
       targetPropValue,
       properties,
@@ -48,10 +46,8 @@ export async function addEdge(req, res) {
 
     await graph.addEdge(
       relationType,
-      sourceLabel,
       sourcePropName,
       sourcePropValue,
-      targetLabel,
       targetPropName,
       targetPropValue,
       properties,
@@ -60,20 +56,17 @@ export async function addEdge(req, res) {
 
     logger.info(`Edge Added ${JSON.stringify({
       relationType: relationType,
-      sourceLabel: sourceLabel,
       sourcePropName: sourcePropName,
       sourcePropValue: sourcePropValue,
-      targetLabel: targetLabel,
+
       targetPropName: targetPropName,
       targetPropValue: targetPropValue,
       properties: properties,
     })}`)
     res.status(200).json({
       relationType: relationType,
-      sourceLabel: sourceLabel,
       sourcePropName: sourcePropName,
       sourcePropValue: sourcePropValue,
-      targetLabel: targetLabel,
       targetPropName: targetPropName,
       targetPropValue: targetPropValue,
       properties: properties,

@@ -43,7 +43,6 @@ new WebsocketProvider(
 );
 
 // Setup Database
-import { Neo4jDriver } from "./drivers/neo4jDriver";
 import { GremlinDriver } from "./drivers/germlinDriver";
 import { MemGraphDriver } from "./drivers/memgraphDriver";
 import {ArangoDBDriver } from "./drivers/ArangoDBDriver";
@@ -78,7 +77,7 @@ switch (dbname) {
 
 // Setup graph
 import { Graph } from "./graph/GraphManager";
-import { Vertex_Edge } from "./graph/Graph";
+import { EdgeInformation, Vertex_Edge, VertexInformation } from "./graph/Graph";
 const GraphManager = new Graph();
 export const graph = new Vertex_Edge(ydoc);
 
@@ -333,103 +332,83 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
-// const fs = require("fs");
-// const { chain } = require("stream-chain");
-// const { parser } = require("stream-json");
-// const { pick } = require("stream-json/filters/Pick");
-// const { streamArray } = require("stream-json/streamers/StreamArray");
-// const { once } = require("events");
+const fs = require("fs");
+const { chain } = require("stream-chain");
+const { parser } = require("stream-json");
+const { pick } = require("stream-json/filters/Pick");
+const { streamArray } = require("stream-json/streamers/StreamArray");
+const { once } = require("events");
 
 async function onListening() {
+    logger.error(process.env.IS_PRELOAD_LEADER)
+
+  if(process.env.IS_PRELOAD_LEADER == "Yes"){
+    logger.error("I am preloading leader. Handling the initialisation of PG-CRDT");
   // If the middleware crashes and restarts, it needs to reinitialise the database.
-  // let path = process.env.PRELOAD_PATH;
-  // let BATCH_SIZE = 1000;
-  // if (checkFile(path)) {
-  //   try {
-  //     let vertexFut: Promise<any>[] = [];
-  //     let edgeFut = [];
-  //     // Load vertices from the file into YJS document
+    try {
+      let vertexFut: Promise<any>[] = [];
+      let edgeFut = [];
+      // Load vertices from the file into YJS document
 
-  //     const vertexPipeline = chain([
-  //       fs.createReadStream(path),
-  //       parser(),
-  //       pick({ filter: "vertices" }),
-  //       streamArray(),
-  //     ]);
+      const vertexPipeline = chain([
+        fs.createReadStream("/var/lib/grace/import/vertices.json"),
+        parser(),
+        streamArray(),
+      ]);
 
-  //     vertexPipeline.on("data", async ({ value }) => {
-  //       value.id = value._id.toString();
-  //       // logger.info(JSON.stringify(value));
-  //       vertexFut.push(
-  //         graph.addVertex(["vertex"], value, false).catch((err) => {
-  //           console.error("Vertex insert failed:", err);
-  //         })
-  //       );
-  //     });
+      vertexPipeline.on("data", async ({ value }) => {
+        value.id = value._id.toString();
+        // logger.info(JSON.stringify(value));
 
-  //     // Wait for final batch at the end of the stream
-  //     await vertexPipeline.on("end", async () => {
-  //       if (vertexFut.length > 0) {
-  //         await Promise.all(vertexFut);
-  //       }
-  //       logger.info("✅ All vertices inserted");
+        const vertex: VertexInformation = {
+                id: value.id.toString(),
+                labels: ["YCSBVertex"],
+                properties: value,
+              };
+        graph.GVertices.set(value.id,vertex);
+      });
+
+      // Wait for final batch at the end of the stream
+      await vertexPipeline.on("end", async () => {
+        logger.info("✅ All vertices inserted");
 
         
-  //       const edgePipeline = chain([
-  //         fs.createReadStream(path),
-  //         parser(),
-  //         pick({ filter: "edges" }),
-  //         streamArray(),
-  //       ]);
+        const edgePipeline = chain([
+          fs.createReadStream("/var/lib/grace/import/edges.json"),
+          parser(),
+          streamArray(),
+        ]);
 
-  //       edgePipeline.on("data", async ({ value }) => {
-  //         value.id = value._id.toString();
-  //         edgeFut.push(
-  //           graph.addEdge(
-  //             ["edge"],
-  //             ["vertex"],
-  //             "id",
-  //             value._outV.toString(),
-  //             ["vertex"],
-  //             "id",
-  //             value._inV.toString(),
-  //             value,
-  //             false
-  //           )
-  //         );
+        edgePipeline.on("data", async ({ value }) => {
+          value.id = value._id.toString();
+          //adding it the yjs list
+              const edge: EdgeInformation = {
+                id: value.id.toString(),
+                sourcePropName: "id",
+                sourcePropValue: value._outV.toString(),
+                targetPropName: "id",
+                targetPropValue: value._inV.toString(),
+                properties: new Y.Map(Object.entries(value)),
+                relationType: ["YCSBEdge"],
+              };
+            
+              graph.GEdges.set(value.id, edge);
           
-  //       });
-  //       await once(edgePipeline, "end");
-  //       await Promise.all(edgeFut);
-  //       // logger.info("✅ All edges inserted");
-  //       // for (let index = 1; index < 2000; index++) {
-  //       //   const element = graph.GEdges.get(index.toString());
-  //       //   logger.info(JSON.stringify(element));
-          
-  //       // }
-
-  //     });
+        });
+        await once(edgePipeline, "end");
+      });
 
 
 
 
-  //   } catch (e) {
-  //     logger.error("Exception when loading data from a file " + e);
-  //   }
-  // }
-
+    } catch (e) {
+      logger.error("Exception when loading data from a file " + e);
+    }
+  }
+  else{
+    logger.error("I am not the crdt preload leader. Waiting for remote updates")
+  }
   var addr = server.address();
   var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   logger.debug("Listening on " + bind);
 }
-
-// async function checkFile(path) {
-//   try {
-//     await fs.access(path); // checks if readable
-//     console.log("File exists");
-//     return true;
-//   } catch (err) {
-//     console.log("File does not exist");
-//     return false;
-//   }
-// }
