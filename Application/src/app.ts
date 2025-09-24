@@ -5,6 +5,7 @@ import http from "http";
 import path from "path";
 
 export var app = express();
+let preloadDone = false;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -108,6 +109,13 @@ import {
 import { final } from "stream-chain";
 
 {
+
+
+  app.get('/ready', (req, res) => {
+      if (preloadDone) res.sendStatus(200);
+      else res.sendStatus(503); // 503 = Service Unavailable
+  });
+
   app.get("/api/getGraph", async (req, res) => {
     await getGraph(req, res);
   });
@@ -396,6 +404,7 @@ async function onListening() {
           
         });
         await once(edgePipeline, "end");
+        preloadDone = true;
       });
 
 
