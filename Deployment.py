@@ -201,7 +201,7 @@ def generate_compose_file(i, db_conf, config):
           entrypoint:
             [
               "bash", "-c",
-              "mgconsole --host {db_name} --port 7687 < /var/lib/memgraph/import/preloadMemgraph.cypher"
+              "cat  /var/lib/memgraph/import/preloadMemgraph.cypher | mgconsole --host {db_name} --port 7687"
             ]
           networks:
             - Shared_net
