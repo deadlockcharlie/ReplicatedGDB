@@ -264,13 +264,24 @@ def generate_compose_file(i, db_conf, config):
           container_name: {db_name}
           ports:
             - "{protocol_port}:27017"
+          volumes:
+            - {PRELOAD_DATA}:/var/lib/mongodb/import
           healthcheck:
             test: echo 'db.runCommand("ping").ok' | mongosh mongodb://{db_name}:27017/ --quiet
             interval: 10s
             timeout: 5s
             retries: 5
           networks:
-            - Shared_net
+              - Shared_net
+        {preloadName}:
+          image: alpine
+          container_name: preload{i+1}
+          depends_on:
+            {db_name}:
+              condition: service_healthy
+          command: "true"
+          
+          
         """).strip("\n")
     # elif database == "nebulagraph":  # nebulagraph
     #     db_url = f"http://{db_name}:7687"
