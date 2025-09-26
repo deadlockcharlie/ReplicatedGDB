@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "tsc && node --max-old-space-size=4096 dist/app.js"
+    "start": "tsc && node --max-old-space-size=32767 dist/app.js"
   },
   "keywords": [],
   "author": "",
