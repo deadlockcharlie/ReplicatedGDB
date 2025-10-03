@@ -155,11 +155,17 @@ def generate_compose_file(i, db_conf, config):
             - "{protocol_port}:7687"
           environment:
             NEO4J_AUTH: none
+            NEO4JLABS_PLUGINS: '["apoc"]'
+            NEO4J_apoc_import_file_enabled: "true"
+            NEO4J_apoc_import_file_use__neo4j__config: "true"
+            NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+          volumes:
+            - {PRELOAD_DATA}:/var/lib/neo4j/import
           ulimits:
             nofile:
               soft: 40000
               hard: 40000
-            
+          
           healthcheck:
             test: [ "CMD", "bash", "-c", "cypher-shell -u neo4j -p {password} 'RETURN 1'" ]
             interval: 10s
@@ -168,6 +174,21 @@ def generate_compose_file(i, db_conf, config):
           networks:
             - Shared_net
           {volume_block}
+        {preloadName}:
+          image: neo4j:4.4.24
+          container_name: preload{i+1}
+          depends_on:
+            {db_name}:
+              condition: service_healthy
+          volumes:
+            - {PRELOAD_DATA}:/var/lib/neo4j/import
+          entrypoint:
+            [
+              "bash", "-c",
+              "cypher-shell -a bolt://{db_name}:7687 -u pandey -p verysecretpassword -f /var/lib/neo4j/import/preloadNeo4j.cypher"
+            ]
+          networks:
+            - Shared_net
 
         """).strip("\n")
     elif database == "memgraph":  # memgraph
@@ -253,6 +274,22 @@ def generate_compose_file(i, db_conf, config):
             retries: 5
           ports:
             - "{protocol_port}:8529"
+          volumes:
+            - {PRELOAD_DATA}:/var/lib/arangodb/import
+          networks:
+            - Shared_net
+        {preloadName}:
+          image: arangodb:latest
+          container_name: {preloadName}
+          depends_on:
+            {db_name}:
+              condition: service_healthy
+          volumes:
+            - ../../PreloadData:/var/lib/arangodb/import
+          entrypoint:
+            [
+              "sh", "/var/lib/arangodb/import/arangoDBImport.sh", "tcp://{db_name}:8529" , "1"
+            ]
           networks:
             - Shared_net
         """).strip("\n")
@@ -274,13 +311,17 @@ def generate_compose_file(i, db_conf, config):
           networks:
               - Shared_net
         {preloadName}:
-          image: alpine
+          image: mongo:8.0.14-rc0
           container_name: preload{i+1}
           depends_on:
             {db_name}:
               condition: service_healthy
-          command: "true"
-          
+          volumes:
+            - {PRELOAD_DATA}:/var/lib/mongodb/import
+          entrypoint: 
+            ["/var/lib/mongodb/import/mongoDBImport.sh", "{db_name}:27017"]
+          networks:
+            - Shared_net
           
         """).strip("\n")
     # elif database == "nebulagraph":  # nebulagraph

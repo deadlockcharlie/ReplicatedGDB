@@ -1,11 +1,9 @@
 import { logger } from "../helpers/logging";
 import { DatabaseDriver } from "./driver";
 import neo4j from "neo4j-driver";
-import {graph} from "../app";
+import { graph } from "../app";
 
 export class MemGraphDriver extends DatabaseDriver {
-  
-
   driver;
   constructor() {
     super();
@@ -17,21 +15,19 @@ export class MemGraphDriver extends DatabaseDriver {
     );
     (async () => {
       await this.driver.getServerInfo();
-      
-      logger.info(
-        "Connected to the Database."
-      );
+
+      logger.info("Connected to the Database.");
     })();
   }
 
-  async getGraph(){
+  async getGraph() {
     const query = `MATCH (n) RETURN n LIMIT 50`;
     const params = null;
 
-    try{
+    try {
       const result = await this.driver.executeQuery(query);
       return result;
-    } catch(err){
+    } catch (err) {
       logger.error(err);
       throw err;
     }
@@ -40,9 +36,9 @@ export class MemGraphDriver extends DatabaseDriver {
   async addVertex(labels, properties) {
     logger.info("Adding vertex");
     const labelString = labels.join(":");
-     // Build and execute Cypher query
+    // Build and execute Cypher query
     const query = `CREATE (n:${labelString} $properties) RETURN n`;
-    const params = {properties: properties };
+    const params = { properties: properties };
     try {
       await this.driver.executeQuery(query, params);
     } catch (err) {
@@ -52,7 +48,7 @@ export class MemGraphDriver extends DatabaseDriver {
   }
 
   async deleteVertex(id) {
-    const query = "MATCH (n {id: \""+id+"\"}) DELETE n";
+    const query = 'MATCH (n {id: "' + id + '"}) DELETE n';
     // logger.error("Delete vertex query: "+ query);
     try {
       await this.driver.executeQuery(query, null);
@@ -70,8 +66,7 @@ export class MemGraphDriver extends DatabaseDriver {
     targetPropValue: any,
     properties: { [key: string]: any }
   ) {
-
-     const relationLabelString = relationLabels.join(":");
+    const relationLabelString = relationLabels.join(":");
 
     const query = `
           MATCH (a {${sourcePropName}: "${sourcePropValue}"}), 
@@ -98,8 +93,8 @@ export class MemGraphDriver extends DatabaseDriver {
   }
 
   async deleteEdge(id: string) {
-    const query = "MATCH ()-[r {id: \""+id+"\"}]-() DELETE r";
-    logger.info("Delete edge query: "+ query);
+    const query = 'MATCH ()-[r {id: "' + id + '"}]-() DELETE r';
+    logger.info("Delete edge query: " + query);
     try {
       await this.driver.executeQuery(query, null);
     } catch (err) {
@@ -109,8 +104,16 @@ export class MemGraphDriver extends DatabaseDriver {
   }
 
   async setVertexProperty(vid: string, key: string, value: string) {
-    const query = "MATCH (n {id: \""+vid+"\"}) SET n."+key+"=\""+ value+"\"  RETURN n;";
-    logger.info("Set vertex property query: "+ query);
+    const query =
+      'MATCH (n {id: "' +
+      vid +
+      '"}) SET n.' +
+      key +
+      '="' +
+      value +
+      '"  RETURN n;';
+
+    logger.info("Set vertex property query: " + query);
 
     try {
       const result = await this.driver.executeQuery(query, null);
@@ -124,7 +127,14 @@ export class MemGraphDriver extends DatabaseDriver {
     }
   }
   async setEdgeProperty(eid: string, key: string, value: string) {
-    const query = "MATCH ()-[r {id: \""+eid+"\"}]->() SET r."+key+"=\""+ value+"\"  RETURN r";
+    const query =
+      'MATCH ()-[r {id: "' +
+      eid +
+      '"}]->() SET r.' +
+      key +
+      '="' +
+      value +
+      '"  RETURN r';
 
     try {
       const result = await this.driver.executeQuery(query, null);
@@ -138,52 +148,48 @@ export class MemGraphDriver extends DatabaseDriver {
     }
   }
 
-    async removeVertexProperty(vid: string, key: string) {
-      const query = "MATCH (n {id: \""+ vid+"\"}) REMOVE n."+key+" RETURN n";
-      try {
-        const result = await this.driver.executeQuery(query, null);
-        if (result.records.length === 0) {
-          throw new Error(`Vertex with id ${vid} not found.`);
-        }
-        logger.info(`Property ${key} removed from vertex with id ${vid}`);
-      } catch (err) {
-        logger.error("Error in remove vertex property: " + err);
-        throw err;
+  async removeVertexProperty(vid: string, key: string) {
+    const query = 'MATCH (n {id: "' + vid + '"}) REMOVE n.' + key + " RETURN n";
+    try {
+      const result = await this.driver.executeQuery(query, null);
+      if (result.records.length === 0) {
+        throw new Error(`Vertex with id ${vid} not found.`);
       }
+      logger.info(`Property ${key} removed from vertex with id ${vid}`);
+    } catch (err) {
+      logger.error("Error in remove vertex property: " + err);
+      throw err;
     }
-  
-    async removeEdgeProperty(eid: string, key: string) {
-      const query = "MATCH ()-[r {id: \""+ eid+"\"}]->() REMOVE r."+key+" RETURN r";
+  }
 
-      try {
-        const result = await this.driver.executeQuery(query, null);
-        if (result.records.length === 0) {
-          throw new Error(`Edge with id ${eid} not found.`);
-        }
-        logger.info(`Property ${key} removed from edge with id ${eid}`);
-      } catch (err) {
-        logger.error("Error in remove edge property: " + err);
-        throw err;
+  async removeEdgeProperty(eid: string, key: string) {
+    const query =
+      'MATCH ()-[r {id: "' + eid + '"}]->() REMOVE r.' + key + " RETURN r";
+
+    try {
+      const result = await this.driver.executeQuery(query, null);
+      if (result.records.length === 0) {
+        throw new Error(`Edge with id ${eid} not found.`);
       }
+      logger.info(`Property ${key} removed from edge with id ${eid}`);
+    } catch (err) {
+      logger.error("Error in remove edge property: " + err);
+      throw err;
     }
+  }
 
-
-  async *streamQuery(
-  session: any,
-  query: string,
-  batchSize: number = 10000){
+  async *streamQuery(session: any, query: string, batchSize: number = 10000) {
     let skip = 0;
-  while (true) {
-    const result = await this.driver.executeQuery(
-      `${query} SKIP $skip LIMIT $limit`,
-      { skip: neo4j.int(skip), limit: neo4j.int(batchSize) }
-    );
+    while (true) {
+      const result = await this.driver.executeQuery(
+        `${query} SKIP $skip LIMIT $limit`,
+        { skip: neo4j.int(skip), limit: neo4j.int(batchSize) }
+      );
 
-    if (result.records.length === 0) break;
+      if (result.records.length === 0) break;
 
-    yield result.records; // yield a batch of records
-    skip += batchSize;
+      yield result.records; // yield a batch of records
+      skip += batchSize;
+    }
   }
-  }
-
 }

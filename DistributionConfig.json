@@ -9,7 +9,7 @@
   "preload_data": false,
   "dbs" : [
     {
-     "database": "neo4j", 
+     "database": "mongodb", 
       "password": "verysecretpassword",
       "user": "pandey",
       "app_log_level": "error"

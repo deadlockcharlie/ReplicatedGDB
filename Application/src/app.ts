@@ -405,6 +405,10 @@ async function onListening() {
         });
         await once(edgePipeline, "end");
         preloadDone = true;
+        let size = Y.encodeStateAsUpdate(ydoc).byteLength;
+        logger.error(
+          `✅ All edges inserted. Preload complete. Yjs document size is ${size} bytes`
+        );      
       });
 
 
