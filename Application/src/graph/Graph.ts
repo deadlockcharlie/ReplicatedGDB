@@ -51,6 +51,19 @@ export class Vertex_Edge {
     return result;
   }
 
+  public async checkInvariants(){
+
+    
+
+    //todo: implement invariants here
+    //1: Every post has a creation date.
+    //2. Comments on a message are restricted to forums. 
+    //3. A comment can only be posted by a forum member.
+    //4. A person has a unique IP Address. 
+    //5. Forum members can only view posts created after their joining date. 
+
+  }
+
   public async addVertex(
     labels: [string],
     properties: Properties,
